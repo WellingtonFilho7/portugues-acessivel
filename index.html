@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Português Acessível para Surdos – MVP</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Inter,sans-serif;max-width:920px;margin:24px auto;padding:0 16px;line-height:1.4}
+    h1{font-size:1.4rem;margin:0 0 8px}
+    .row{display:grid;grid-template-columns:1fr;gap:16px}
+    @media(min-width:900px){.row{grid-template-columns:1fr 1fr}}
+    textarea{width:100%;min-height:180px;padding:12px;border:1px solid #ddd;border-radius:8px}
+    .card{border:1px solid #eee;border-radius:10px;padding:12px;background:#fafafa}
+    .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+    button{padding:10px 12px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer}
+    button:hover{background:#f2f2f2}
+    .out{white-space:pre-wrap;background:#fff}
+    .small{font-size:.9rem;color:#555}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  </style>
+</head>
+<body>
+  <h1>Português Acessível para Surdos</h1>
+  <p class="small">Cole o texto. Clique em “Gerar” para ver: Versão simplificada e Versão estilo Libras.</p>
+
+  <div class="row">
+    <div class="card">
+      <h3>Entrada</h3>
+      <textarea id="input" placeholder="Cole seu texto aqui..."></textarea>
+      <div class="toolbar">
+        <button id="btnSample">Exemplo rápido</button>
+        <button id="btnClear">Limpar</button>
+        <button id="btnGenerate">Gerar</button>
+      </div>
+      <label class="small"><input type="checkbox" id="strictOrder" checked> Forçar ordem Tempo → Tópico → Ação</label>
+    </div>
+
+    <div class="card">
+      <h3>Versão simplificada</h3>
+      <div class="toolbar">
+        <button data-copy="#outSimple">Copiar</button>
+      </div>
+      <div id="outSimple" class="out"></div>
+    </div>
+  </div>
+
+  <div class="row" style="margin-top:16px">
+    <div class="card">
+      <h3>Versão estilo Libras</h3>
+      <div class="toolbar">
+        <button data-copy="#outLibras">Copiar</button>
+      </div>
+      <div id="outLibras" class="out mono"></div>
+    </div>
+    <div class="card">
+      <h3>Checklist</h3>
+      <ul class="small">
+        <li>Frases curtas, uma ideia por linha</li>
+        <li>Cortar artigos e enfeites</li>
+        <li>Tempo no início quando houver</li>
+        <li>Flexão mínima de verbos</li>
+        <li>Manter nomes próprios e números</li>
+      </ul>
+    </div>
+  </div>
+
+<script>
+const ARTICLES = ["o","a","os","as","um","uma","uns","umas","do","da","dos","das","ao","à","aos","às"];
+const LIGHT_PREP = ["de","em","para","por","com","sem","sobre","até","desde","entre"];
+const FILLERS = ["realmente","basicamente","literalmente","provavelmente","talvez","certamente","claramente","apenas","somente","inclusive"];
+const TEMP_MARKERS = ["hoje","amanhã","ontem","agora","depois","antes","cedo","tarde","noite",
+  "segunda","terça","quarta","quinta","sexta","sábado","domingo",
+  "janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+
+const SIMPLE_REPLACE = new Map(Object.entries({
+  "não obstante":"apesar",
+  "todavia":"mas",
+  "entretanto":"mas",
+  "porém":"mas",
+  "consequentemente":"por isso",
+  "posteriormente":"depois",
+  "anteriormente":"antes",
+  "subsidiariamente":"além disso",
+}));
+
+// flexões comuns → infinitivo ou forma simples
+const VERB_ENDINGS = [
+  [/([a-záéíóúâêôãõç]+)(amos|emos|imos)\b/gi, "$1r"],   // nós amamos → amar
+  [/([a-záéíóúâêôãõç]+)(rei|rás|rá|remos|reis|rão)\b/gi,"$1r"], // futuro
+  [/([a-záéíóúâêôãõç]+)(ava|ia|avam|iam)\b/gi,"$1r"],   // pret imperf.
+  [/([a-záéíóúâêôãõç]+)(ei|ou|eu|ram)\b/gi,"$1r"],      // pret perf.
+  [/\b(vou|vai|vamos|vão)\s+([a-záéíóúâêôãõç]+)\b/gi,"$2"], // vou fazer → fazer
+  [/\b(iremos|iremos)\s+([a-záéíóúâêôãõç]+)\b/gi,"$2"],
+]);
+
+function splitSentences(t){
+  // quebra por . ! ? ; e também por vírgulas fortes
+  const parts = t
+    .replace(/\s+/g," ")
+    .split(/(?<=[\.\!\?\;])\s+|,\s+(?=[A-ZÁÉÍÓÚÃÕÂÊÔ0-9])/g)
+    .map(s=>s.trim()).filter(Boolean);
+  return parts;
+}
+
+function simplifySentence(s){
+  let out = " " + s.toLowerCase() + " ";
+  SIMPLE_REPLACE.forEach((to,from)=>{ out = out.replace(new RegExp("\\b"+from+"\\b","gi"), to); });
+
+  // remover enchimentos
+  FILLERS.forEach(w=> out = out.replace(new RegExp("\\b"+w+"\\b","gi"), " "));
+
+  // compactar espaços
+  out = out.replace(/\s+/g," ").trim();
+
+  // Primeira letra maiúscula
+  return out.charAt(0).toUpperCase() + out.slice(1);
+}
+
+function toLibrasStyleLine(s, strictOrder=true){
+  let original = s;
+
+  // tirar pontuação interna
+  s = s.replace(/[\,\;\:\(\)\“\”\"\']+/g," ");
+
+  // reduzir flexões verbais
+  VERB_ENDINGS.forEach(([re,rep])=> s = s.replace(re,rep));
+
+  // remover artigos
+  s = s.split(" ").filter(w=> !ARTICLES.includes(w.toLowerCase())).join(" ");
+
+  // remover preposições leves repetidas
+  s = s.replace(/\b(de|em|para|por|com|sem|sobre|até|desde|entre)\b/gi,(m)=> m); // mantemos quando necessário
+
+  // tokens
+  let tokens = s.split(/\s+/).filter(Boolean);
+
+  // detectar tempo
+  let tempo = [];
+  let resto = [];
+  tokens.forEach((tk,i)=>{
+    if (TEMP_MARKERS.includes(tk.toLowerCase())) tempo.push(tk.toUpperCase());
+    else resto.push(tk);
+  });
+
+  // heurística de sujeito curto no início
+  // nada muito complexo: mantemos ordem, mas colocamos tempo na frente
+  let ordered = [];
+  if (strictOrder && tempo.length) ordered = [...tempo, ...resto];
+  else ordered = tokens;
+
+  // tudo em caixa alta, remover palavras vazias duplicadas
+  let upper = ordered.join(" ").replace(/\s+/g," ").trim().toUpperCase();
+
+  // cortar palavras supérfluas finais
+  upper = upper.replace(/\.$/,"").trim();
+
+  // inserir pontos finais por linha controlada no print
+  return upper;
+}
+
+function process(){
+  const input = document.getElementById('input').value.trim();
+  const strictOrder = document.getElementById('strictOrder').checked;
+  const outSimple = document.getElementById('outSimple');
+  const outLibras = document.getElementById('outLibras');
+
+  if(!input){ outSimple.textContent=""; outLibras.textContent=""; return; }
+
+  const sentences = splitSentences(input);
+
+  // Versão simplificada: quebrar e limpar
+  const simpleLines = sentences.map(simplifySentence);
+
+  // Versão Libras: uma ideia por linha
+  const librasLines = sentences.map(s=> toLibrasStyleLine(s, strictOrder));
+
+  outSimple.textContent = "• " + simpleLines.join("\n• ");
+  outLibras.textContent = "• " + librasLines.join("\n• ");
+}
+
+document.getElementById('btnGenerate').addEventListener('click', process);
+document.getElementById('btnClear').addEventListener('click', ()=>{
+  document.getElementById('input').value="";
+  process();
+});
+document.getElementById('btnSample').addEventListener('click', ()=>{
+  document.getElementById('input').value =
+"Quando a chuva parou, fomos correndo até a escola porque já estava tarde. Ainda que eu ande pelo vale da sombra da morte, não temerei mal nenhum, porque tu estás comigo.";
+  process();
+});
+document.querySelectorAll('button[data-copy]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const sel = btn.getAttribute('data-copy');
+    const el = document.querySelector(sel);
+    navigator.clipboard.writeText(el.textContent).then(()=>{
+      btn.textContent = "Copiado";
+      setTimeout(()=> btn.textContent="Copiar", 1200);
+    });
+  });
+});
+</script>
+</body>
+</html>
