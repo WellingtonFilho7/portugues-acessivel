@@ -22,7 +22,6 @@
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
     .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
     label{display:inline-flex;gap:8px;align-items:center;cursor:pointer}
-    /* Estilos para a nova seção de exceções */
     #whitelistContainer { display: none; margin-top: 16px; }
     #toggleWhitelist { cursor: pointer; color: #007bff; text-decoration: underline; font-size: .9rem; }
   </style>
@@ -178,10 +177,9 @@
     if (savedList) {
       whitelistBox.value = savedList;
     } else {
-      // Preenche com a lista padrão se não houver nada salvo
       whitelistBox.value = "discipulado\nfamília\nfamílias\ncomunidade\ncomunidades\nverdade\nbelo\nbom\nSalmo\nSalmos\nLibras\nPortuguês\nBíblia";
     }
-    saveWhitelist(); // Salva e carrega a lista no WHITELIST
+    saveWhitelist();
   }
 
   function toggleWhitelist() {
@@ -224,7 +222,7 @@
     }, duration);
   }
 
-  // Inicialização
+  // Inicialização ao carregar a página
   restoreWhitelistFromStorage();
 </script>
 </body>
