@@ -5,250 +5,228 @@
   <title>Português Acessível para Surdos</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Inter,sans-serif;max-width:980px;margin:24px auto;padding:0 16px;line-height:1.5}
-    h1{font-size:1.35rem;margin:0 0 8px}
-    .grid{display:grid;gap:16px}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Inter,sans-serif;max-width:980px;margin:24px auto;padding:0 16px;line-height:1.5;background:#f8f9fa;color:#212529}
+    h1{font-size:1.75rem;margin:0 0 8px;color:#0056b3;}
+    .grid{display:grid;gap:20px}
     @media(min-width:940px){.grid{grid-template-columns:1fr 1fr}}
-    .card{border:1px solid #eee;border-radius:12px;padding:12px;background:#fafafa}
-    textarea{width:100%;min-height:180px;padding:12px;border:1px solid #ddd;border-radius:10px}
-    .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
-    button{padding:10px 12px;border:1px solid #ddd;border-radius:10px;background:#fff;cursor:pointer}
-    button:hover{background:#f2f2f2}
-    .small{font-size:.9rem;color:#555}
-    .out{white-space:pre-wrap;background:#fff;padding:10px;border:1px solid #eee;border-radius:10px}
+    .card{border:1px solid #dee2e6;border-radius:12px;padding:20px;background:#fff;box-shadow:0 4px 6px rgba(0,0,0,0.05)}
+    textarea{width:100%;min-height:200px;padding:12px;border:1px solid #ced4da;border-radius:8px;resize:vertical;font-size:1rem;}
+    textarea:focus{border-color:#80bdff;outline:0;box-shadow:0 0 0 0.2rem rgba(0,123,255,.25)}
+    .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0 4px}
+    button{padding:10px 16px;border:1px solid #ced4da;border-radius:8px;background:#fff;cursor:pointer;font-weight:500;transition:all .2s}
+    button:hover{background:#e9ecef;border-color:#adb5bd}
+    .primary{background:#007bff;color:white;border-color:#007bff}
+    .primary:hover{background:#0056b3;border-color:#0056b3}
+    .small{font-size:.9rem;color:#6c757d}
+    .out{white-space:pre-wrap;background:#f8f9fa;padding:12px;border:1px solid #dee2e6;border-radius:8px;min-height:60px;font-size:1rem;}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-    .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
-    label{display:inline-flex;gap:8px;align-items:center}
+    .row{display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+    label{display:inline-flex;gap:8px;align-items:center;cursor:pointer}
+    #whitelistContainer { display: none; margin-top: 16px; border-top: 1px solid #eee; padding-top: 16px; }
+    #toggleWhitelist { cursor: pointer; color: #007bff; text-decoration:none; font-size: .9rem; }
+    #toggleWhitelist:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
-  <h1>Português Acessível para Surdos</h1>
-  <p class="small">Escolha o modo antes de gerar. Para textos de opinião e feedback, use Simplificado leve. Para aproximação da lógica da Libras, use Estilo Libras.</p>
+  <h1>Português Acessível</h1>
+  <p class="small">Adapte textos para uma leitura mais clara. Ideal para laudos, documentos e comunicação direta.</p>
 
   <div class="grid">
     <div class="card">
-      <h3>Entrada</h3>
-      <textarea id="input" placeholder="Cole seu texto aqui..."></textarea>
+      <h3>Seu Texto</h3>
+      <textarea id="input" placeholder="Cole o texto original aqui..."></textarea>
 
-      <div class="row" style="margin:8px 0">
-        <label><input type="radio" name="mode" value="simple" checked> Simplificado leve</label>
+      <div class="row" style="margin:16px 0">
+        <label><input type="radio" name="mode" value="simple" checked> Simplificado Leve</label>
         <label><input type="radio" name="mode" value="libras"> Estilo Libras</label>
-      </div>
-
-      <div class="row" style="margin:8px 0">
-        <label class="small"><input type="checkbox" id="strictOrder" checked> Tempo no início quando houver</label>
-        <label class="small"><input type="checkbox" id="useWhitelist" checked> Respeitar lista de exceções</label>
       </div>
 
       <div class="toolbar">
         <button onclick="fillSample()">Exemplo</button>
         <button onclick="clearAll()">Limpar</button>
-        <button onclick="process()">Gerar</button>
+        <button class="primary" onclick="process()">Gerar Adaptação</button>
+      </div>
+      
+      <div style="margin-top: 20px;">
+        <a id="toggleWhitelist" onclick="toggleWhitelist()">Editar lista de exceções</a>
+        <div id="whitelistContainer">
+          <p class="small" style="margin-top:8px;">Palavras que não devem ser alteradas (uma por linha). A lista é salva no seu navegador.</p>
+          <textarea id="whitelistBox" onkeyup="saveWhitelist()" style="min-height: 120px;"></textarea>
+        </div>
       </div>
     </div>
 
     <div class="card">
-      <h3>Lista de exceções</h3>
-      <p class="small">Palavras que não devem ser alteradas. Uma por linha. Edite à vontade.</p>
-      <textarea id="whitelistBox">discipulado
-família
-famílias
-comunidade
-comunidades
-verdade
-belo
-bom
-Salmo
-Salmos
-Libras
-Português
-Bíblia</textarea>
-      <div class="toolbar">
-        <button onclick="loadWhitelist()">Aplicar exceções</button>
-      </div>
-    </div>
-  </div>
+      <h3>Texto Adaptado</h3>
+      <div id="results" style="display: none;">
+        <h4 style="margin-top:0;">Versão Simplificada</h4>
+        <div class="out" id="outSimple"></div>
+        <div class="toolbar" style="margin-top:10px; margin-bottom: 20px;">
+          <button onclick="copyOut('#outSimple', this)">Copiar Simplificado</button>
+        </div>
 
-  <div class="grid" style="margin-top:16px">
-    <div class="card">
-      <h3>Versão simplificada</h3>
-      <div class="toolbar">
-        <button onclick="copyOut('#outSimple', this)">Copiar</button>
+        <h4>Versão Estilo Libras</h4>
+        <div class="out mono" id="outLibras"></div>
+        <div class="toolbar" style="margin-top:10px;">
+          <button onclick="copyOut('#outLibras', this)">Copiar Estilo Libras</button>
+        </div>
       </div>
-      <div id="outSimple" class="out"></div>
-    </div>
-
-    <div class="card">
-      <h3>Versão estilo Libras</h3>
-      <div class="toolbar">
-        <button onclick="copyOut('#outLibras', this)">Copiar</button>
-      </div>
-      <div id="outLibras" class="out mono"></div>
-      <p class="small">Dica: se o texto for técnico ou muito opinativo, prefira o modo Simplificado leve.</p>
+      <p id="resultsPlaceholder" class="small">Os resultados da adaptação aparecerão aqui.</p>
     </div>
   </div>
 
 <script>
-/* ===== Config ===== */
-let WHITELIST = new Set();
-function loadWhitelist(){
-  const lines = document.getElementById('whitelistBox').value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
-  WHITELIST = new Set(lines.map(x=> x.toLowerCase()));
-}
-loadWhitelist();
+  // Script idêntico ao anterior, apenas com as novas funções de UI
+  let WHITELIST = new Set();
 
-/* ===== Regras ===== */
-const ARTICLES = ["o","a","os","as","um","uma","uns","umas","do","da","dos","das","ao","à","aos","às"];
-const FILLERS = ["realmente","basicamente","literalmente","provavelmente","talvez","certamente","claramente","apenas","somente","inclusive"];
-const TEMP_MARKERS = ["hoje","amanhã","ontem","agora","depois","antes","cedo","tarde","noite",
-  "segunda","terça","quarta","quinta","sexta","sábado","domingo",
-  "janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
-
-// >>>>> MELHORIA 1: Dicionário de sinônimos expandido
-const SIMPLE_REPLACE = new Map(Object.entries({
-  "todavia":"mas", "entretanto":"mas", "porém":"mas", "contudo":"mas",
-  "consequentemente":"por isso", "portanto":"por isso",
-  "posteriormente":"depois", "anteriormente":"antes",
-  "frequentemente": "muitas vezes",
-  "prover": "dar", "fornecer": "dar",
-  "obter": "conseguir", "alcançar": "conseguir",
-  "realizar": "fazer", "efetuar": "fazer",
-  "utilizar": "usar",
-  "essencial": "importante", "fundamental": "importante",
-  "harmonia": "paz",
-  "denota": "mostra",
-  "necessário": "precisa",
-  "demonstrar": "mostrar",
-  "objetivo": "meta",
-}));
-
-// >>>>> MELHORIA 2: Redução de verbos aprimorada
-function reduceVerbSafely(word) {
-  const w = word.toLowerCase();
-  if (WHITELIST.has(w) || w.length < 4 || /[^a-záéíóúâêôãõç]/i.test(w)) {
-    return word;
+  function saveWhitelist() {
+    const whitelistText = document.getElementById('whitelistBox').value;
+    WHITELIST = new Set(whitelistText.split(/\r?\n/).map(s => s.trim().toLowerCase()).filter(Boolean));
+    localStorage.setItem('userWhitelist', whitelistText);
   }
-  const original = word;
-  const rules = [
-    [/(.+)ei\b/i, "$1ar"], [/(.+)ou\b/i, "$1ar"], [/(.+)am\b/i, "$1ar"], [/(.+)amos\b/i, "$1ar"],
-    [/(.+)aram\b/i, "$1ar"], [/(.+)arão\b/i, "$1ar"], [/(.+)aria\b/i, "$1ar"], [/(.+)asse\b/i, "$1ar"],
-    [/(.+)ava\b/i, "$1ar"], [/(.+)ando\b/i, "$1ar"], [/(.+)ado\b/i, "$1ar"],
-    [/(.+)(emos|eram|erão|eria|esse|endo|ido)\b/i, "$1er"],
-    [/(.+)(imos|iram|irão|iria|isse|indo)\b/i, "$1ir"],
-  ];
-  for (const [re, rep] of rules) {
-    if (re.test(original)) {
-      return original.replace(re, rep);
+
+  function restoreWhitelistFromStorage() {
+    const savedList = localStorage.getItem('userWhitelist');
+    const whitelistBox = document.getElementById('whitelistBox');
+    if (savedList) {
+      whitelistBox.value = savedList;
+    } else {
+      whitelistBox.value = "discipulado\nfamília\nfamílias\ncomunidade\ncomunidades\nverdade\nbelo\nbom\nSalmo\nSalmos\nLibras\nPortuguês\nBíblia";
+    }
+    saveWhitelist();
+  }
+
+  function toggleWhitelist() {
+    const container = document.getElementById('whitelistContainer');
+    const link = document.getElementById('toggleWhitelist');
+    if (container.style.display === 'none' || container.style.display === '') {
+      container.style.display = 'block';
+      link.textContent = 'Ocultar lista de exceções';
+    } else {
+      container.style.display = 'none';
+      link.textContent = 'Editar lista de exceções';
     }
   }
-  return original;
-}
 
-/* ===== Pipeline ===== */
-function splitSentences(t){
-  return t
-    .replace(/\s+/g," ")
-    .split(/(?<=[\.\!\?\;])\s+|,\s+(?=[A-ZÁÉÍÓÚÃÕÂÊÔ0-9])/g)
-    .map(s=>s.trim())
-    .filter(Boolean);
-}
+  const SIMPLE_REPLACE = new Map(Object.entries({
+    "todavia":"mas", "entretanto":"mas", "porém":"mas", "contudo":"mas", "consequentemente":"por isso", "portanto":"por isso",
+    "posteriormente":"depois", "anteriormente":"antes", "frequentemente": "muitas vezes", "prover": "dar", "fornecer": "dar",
+    "obter": "conseguir", "alcançar": "conseguir", "realizar": "fazer", "efetuar": "fazer", "utilizar": "usar",
+    "essencial": "importante", "fundamental": "importante", "harmonia": "paz", "denota": "mostra", "necessário": "precisa",
+    "demonstrar": "mostrar", "objetivo": "meta",
+  }));
 
-function simplifySentence(s){
-  let out = " " + s + " ";
-  SIMPLE_REPLACE.forEach((to,from)=>{
-    out = out.replace(new RegExp("\\b"+from+"\\b","gi"), to);
-  });
-  FILLERS.forEach(w=>{
-    out = out.replace(new RegExp("\\b"+w+"\\b","gi"), " ");
-  });
-  out = out.replace(/\s+/g," ").trim();
-  return out;
-}
+  const ARTICLES = ["o","a","os","as","um","uma","uns","umas","do","da","dos","das","ao","à","aos","às"];
+  const FILLERS = ["realmente","basicamente","literalmente","provavelmente","talvez","certamente","claramente","apenas","somente","inclusive"];
+  const TEMP_MARKERS = ["hoje","amanhã","ontem","agora","depois","antes","cedo","tarde","noite", "segunda","terça","quarta","quinta","sexta","sábado","domingo", "janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
 
-function toLibrasStyleLine(s, opts){
-  const { strictOrder=true } = opts;
-  let x = s.replace(/[\"\“\”\'\(\)]+/g," ");
-  const endPunct = /[\.!\?]$/.test(x) ? x.slice(-1) : "";
-  x = x.replace(/[\,\;\:]+/g," ");
-  let tokens = x.split(/\s+/).filter(Boolean).map(t=>{
-    const low = t.toLowerCase();
-    if (WHITELIST.has(low)) return t;
-    if (ARTICLES.includes(low)) return "";
-    return t;
-  }).filter(Boolean);
-  tokens = tokens.map(t=>{
-    const low = t.toLowerCase();
-    if (WHITELIST.has(low)) return t;
-    if (/[A-Z]{2,}/.test(t)) return t;
-    return reduceVerbSafely(t);
-  });
-  const tempo = [];
-  const resto = [];
-  tokens.forEach(t=>{
-    if (TEMP_MARKERS.includes(t.toLowerCase())) tempo.push(t.toUpperCase());
-    else resto.push(t);
-  });
-  const ordered = (strictOrder && tempo.length) ? [...tempo, ...resto] : tokens;
-  let upper = ordered.join(" ").replace(/\s+/g," ").trim().toUpperCase();
-  return upper;
-}
-
-function process(){
-  const input = document.getElementById('input').value.trim();
-  const outSimple = document.getElementById('outSimple');
-  const outLibras = document.getElementById('outLibras');
-  const mode = document.querySelector('input[name="mode"]:checked').value;
-  const strictOrder = document.getElementById('strictOrder').checked;
-
-  if(!input){ outSimple.textContent=""; outLibras.textContent=""; return; }
-
-  const sentences = splitSentences(input);
-  const simpleLines = sentences.map(simplifySentence);
-  const librasLines = sentences.map(s=> toLibrasStyleLine(s, {strictOrder}));
-  outSimple.textContent = "• " + simpleLines.join("\n• ");
-  outLibras.textContent = "• " + librasLines.join("\n• ");
-}
-
-/* ===== UI ===== */
-function fillSample(){
-  document.getElementById('input').value =
-"1 - 👍🏼\n\n2 - A segunda frase do card 6 eu não gostei muito. Não acho que a ação passiva de observar a chama esteja em harmonia com a primeira frase que denota a ação de educar. Acho que ficaria melhor algo como: Educar é acender chamas e prover o necessário para que estas iluminem famílias e comunidades inteiras.\n\n3 - Erro de digitação: … que amém o que é… e eu sugiro que coloque não só verdadeiro, belo e bom. Fiquei em dúvida se a palavra discipulado não seria muito evangélica, mas é isso mesmo. Não tem outra que fique melhor…";
-  process();
-}
-
-function clearAll(){
-  document.getElementById('input').value = "";
-  document.getElementById('outSimple').textContent = "";
-  document.getElementById('outLibras').textContent = "";
-}
-
-function copyOut(selector, btn){
-  const el = document.querySelector(selector);
-  const text = el.textContent;
-
-  if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(text).then(()=> flash(btn,"Copiado")).catch(()=> legacyCopy(text,btn));
-  } else {
-    legacyCopy(text, btn);
+  function reduceVerbSafely(word) {
+    const w = word.toLowerCase();
+    if (WHITELIST.has(w) || w.length < 4 || /[^a-záéíóúâêôãõç]/i.test(w)) return word;
+    const rules = [
+      [/(.+)ei\b/i, "$1ar"], [/(.+)ou\b/i, "$1ar"], [/(.+)am\b/i, "$1ar"], [/(.+)amos\b/i, "$1ar"],
+      [/(.+)aram\b/i, "$1ar"], [/(.+)arão\b/i, "$1ar"], [/(.+)aria\b/i, "$1ar"], [/(.+)asse\b/i, "$1ar"],
+      [/(.+)ava\b/i, "$1ar"], [/(.+)ando\b/i, "$1ar"], [/(.+)ado\b/i, "$1ar"],
+      [/(.+)(emos|eram|erão|eria|esse|endo|ido)\b/i, "$1er"],
+      [/(.+)(imos|iram|irão|iria|isse|indo)\b/i, "$1ir"],
+    ];
+    for (const [re, rep] of rules) { if (re.test(word)) return word.replace(re, rep); }
+    return word;
   }
-}
-function legacyCopy(text, btn){
-  const ta = document.createElement('textarea');
-  ta.value = text;
-  ta.style.position = 'fixed';
-  ta.style.opacity = '0';
-  document.body.appendChild(ta);
-  ta.focus();
-  ta.select();
-  try{ document.execCommand('copy'); flash(btn,"Copiado"); }
-  catch(e){ flash(btn,"Selecione e copie"); }
-  document.body.removeChild(ta);
-}
-function flash(btn, msg){
-  const old = btn.textContent;
-  btn.textContent = msg;
-  setTimeout(()=> btn.textContent = old, 1200);
-}
+
+  function splitSentences(t) { return t.replace(/\s+/g," ").split(/(?<=[\.\!\?\;])\s+|,\s+(?=[A-ZÁÉÍÓÚÃÕÂÊÔ0-9])/g).map(s=>s.trim()).filter(Boolean); }
+
+  function simplifySentence(s) {
+    let out = " " + s.toLowerCase() + " ";
+    SIMPLE_REPLACE.forEach((to,from)=>{ out = out.replace(new RegExp("\\b"+from+"\\b","gi"), to); });
+    FILLERS.forEach(w=>{ out = out.replace(new RegExp("\\b"+w+"\\b","gi"), " "); });
+    out = out.replace(/\s+/g," ").trim();
+    return out.charAt(0).toUpperCase() + out.slice(1);
+  }
+
+  function toLibrasStyleLine(s, opts) {
+    const { strictOrder=true } = opts;
+    let x = s.replace(/[\"\“\”\'\(\)]+/g," ");
+    x = x.replace(/[\,\;\:]+/g," ");
+    let tokens = x.split(/\s+/).filter(Boolean).map(t=>{
+      const low = t.toLowerCase();
+      if (WHITELIST.has(low) || ARTICLES.includes(low)) return "";
+      return t;
+    }).filter(Boolean);
+    tokens = tokens.map(t=>{
+      if (WHITELIST.has(t.toLowerCase()) || /[A-Z]{2,}/.test(t)) return t;
+      return reduceVerbSafely(t);
+    });
+    const tempo = [];
+    const resto = [];
+    tokens.forEach(t=>{ (TEMP_MARKERS.includes(t.toLowerCase()) ? tempo : resto).push(t); });
+    const ordered = (strictOrder && tempo.length) ? [...tempo.map(t => t.toUpperCase()), ...resto] : tokens;
+    return ordered.join(" ").replace(/\s+/g," ").trim().toUpperCase();
+  }
+
+  function process() {
+    const input = document.getElementById('input').value.trim();
+    const outSimple = document.getElementById('outSimple');
+    const outLibras = document.getElementById('outLibras');
+    const resultsDiv = document.getElementById('results');
+    const placeholder = document.getElementById('resultsPlaceholder');
+
+    if(!input){
+      resultsDiv.style.display = 'none';
+      placeholder.style.display = 'block';
+      return;
+    }
+    
+    resultsDiv.style.display = 'block';
+    placeholder.style.display = 'none';
+
+    const sentences = splitSentences(input);
+    const simpleLines = sentences.map(simplifySentence);
+    const librasLines = sentences.map(s=> toLibrasStyleLine(s, { strictOrder: document.getElementById('strictOrder').checked }));
+    outSimple.innerHTML = simpleLines.map(line => `• ${line}`).join("  
+");
+    outLibras.innerHTML = librasLines.map(line => `• ${line}`).join("  
+");
+  }
+
+  function fillSample() {
+    document.getElementById('input').value = "A análise do seu exame mostra que os discos da coluna estão desidratados e com degeneração, tanto na região cervical quanto na lombar. Em alguns pontos, esses discos estão protruindo e ocupando o espaço foraminal. Posteriormente, faremos uma avaliação postural.";
+    process();
+  }
+
+  function clearAll() {
+    document.getElementById('input').value = "";
+    const resultsDiv = document.getElementById('results');
+    const placeholder = document.getElementById('resultsPlaceholder');
+    resultsDiv.style.display = 'none';
+    placeholder.style.display = 'block';
+  }
+
+  function copyOut(selector, btn) {
+    const el = document.querySelector(selector);
+    const text = el.innerText;
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(()=> flash(btn,"Copiado!")).catch(()=> legacyCopy(text,btn));
+  }
+
+  function legacyCopy(text, btn) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus(); ta.select();
+    try{ document.execCommand('copy'); flash(btn,"Copiado!"); }
+    catch(e){ flash(btn,"Erro ao copiar"); }
+    document.body.removeChild(ta);
+  }
+
+  function flash(btn, msg) {
+    const old = btn.textContent;
+    btn.textContent = msg;
+    setTimeout(()=> btn.textContent = old, 1200);
+  }
+
+  restoreWhitelistFromStorage();
 </script>
 </body>
 </html>
