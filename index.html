@@ -43,9 +43,9 @@
       </div>
 
       <div class="toolbar">
-        <button onclick="fillSample()">Exemplo</button>
-        <button onclick="clearAll()">Limpar</button>
-        <button id="generateBtn" class="primary" onclick="process()">Gerar</button>
+        <button id="sampleBtn">Exemplo</button>
+        <button id="clearBtn">Limpar</button>
+        <button id="generateBtn" class="primary">Gerar</button>
       </div>
     </div>
 
@@ -66,7 +66,7 @@ Libras
 Português
 Bíblia</textarea>
       <div class="toolbar">
-        <button onclick="loadWhitelist()">Salvar e Aplicar Lista</button>
+        <button id="saveWhitelistBtn">Salvar e Aplicar Lista</button>
       </div>
     </div>
   </div>
@@ -75,7 +75,7 @@ Bíblia</textarea>
     <div class="card">
       <h3>Versão Simplificada</h3>
       <div class="toolbar">
-        <button onclick="copyOut('#outSimple', this)">Copiar</button>
+        <button id="copySimpleBtn">Copiar</button>
       </div>
       <div id="outSimple" class="out"></div>
     </div>
@@ -83,203 +83,173 @@ Bíblia</textarea>
     <div class="card">
       <h3>Versão Estilo Libras</h3>
       <div class="toolbar">
-        <button onclick="copyOut('#outLibras', this)">Copiar</button>
+        <button id="copyLibrasBtn">Copiar</button>
       </div>
       <div id="outLibras" class="out mono"></div>
     </div>
   </div>
 
 <script>
-/* ===== Config & State ===== */
-let WHITELIST = new Set();
+// Aguarda o carregamento completo do HTML antes de executar qualquer script
+document.addEventListener('DOMContentLoaded', () => {
 
-// Dicionário de sinônimos expandido
-const SIMPLE_REPLACE = new Map(Object.entries({
-  "todavia":"mas", "entretanto":"mas", "porém":"mas", "contudo":"mas",
-  "consequentemente":"por isso", "portanto":"por isso",
-  "posteriormente":"depois", "anteriormente":"antes",
-  "frequentemente": "muitas vezes",
-  "prover": "dar", "fornecer": "dar",
-  "obter": "conseguir", "alcançar": "conseguir",
-  "realizar": "fazer", "efetuar": "fazer",
-  "utilizar": "usar",
-  "essencial": "importante", "fundamental": "importante",
-  "harmonia": "paz",
-  "denota": "mostra",
-  "necessário": "precisa",
-  "demonstrar": "mostrar",
-  "objetivo": "meta",
-}));
+  /* ===== Elementos da UI ===== */
+  const inputEl = document.getElementById('input');
+  const outSimpleEl = document.getElementById('outSimple');
+  const outLibrasEl = document.getElementById('outLibras');
+  const strictOrderEl = document.getElementById('strictOrder');
+  const whitelistBoxEl = document.getElementById('whitelistBox');
+  const generateBtn = document.getElementById('generateBtn');
+  const sampleBtn = document.getElementById('sampleBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const saveWhitelistBtn = document.getElementById('saveWhitelistBtn');
+  const copySimpleBtn = document.getElementById('copySimpleBtn');
+  const copyLibrasBtn = document.getElementById('copyLibrasBtn');
 
-const ARTICLES = ["o","a","os","as","um","uma","uns","umas","do","da","dos","das","ao","à","aos","às","no","na","nos","nas"];
-const FILLERS = ["realmente","basicamente","literalmente","provavelmente","talvez","certamente","claramente","apenas","somente","inclusive","muito","pouco"];
-const TEMP_MARKERS = ["hoje","amanhã","ontem","agora","depois","antes","cedo","tarde","noite",
-  "segunda","terça","quarta","quinta","sexta","sábado","domingo",
-  "janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+  /* ===== Config & State ===== */
+  let WHITELIST = new Set();
 
-/* ===== Core Functions ===== */
+  const SIMPLE_REPLACE = new Map(Object.entries({
+    "todavia":"mas", "entretanto":"mas", "porém":"mas", "contudo":"mas",
+    "consequentemente":"por isso", "portanto":"por isso",
+    "posteriormente":"depois", "anteriormente":"antes",
+    "frequentemente": "muitas vezes",
+    "prover": "dar", "fornecer": "dar",
+    "obter": "conseguir", "alcançar": "conseguir",
+    "realizar": "fazer", "efetuar": "fazer",
+    "utilizar": "usar",
+    "essencial": "importante", "fundamental": "importante",
+    "harmonia": "paz",
+    "denota": "mostra",
+    "necessário": "precisa",
+    "demonstrar": "mostrar",
+    "objetivo": "meta",
+  }));
 
-// Função de redução de verbos aprimorada
-function reduceVerbSafely(word) {
-  const w = word.toLowerCase();
-  if (WHITELIST.has(w) || w.length < 4 || /[^a-záéíóúâêôãõç]/i.test(w)) {
+  const ARTICLES = ["o","a","os","as","um","uma","uns","umas","do","da","dos","das","ao","à","aos","às","no","na","nos","nas"];
+  const FILLERS = ["realmente","basicamente","literalmente","provavelmente","talvez","certamente","claramente","apenas","somente","inclusive","muito","pouco"];
+  const TEMP_MARKERS = ["hoje","amanhã","ontem","agora","depois","antes","cedo","tarde","noite",
+    "segunda","terça","quarta","quinta","sexta","sábado","domingo",
+    "janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+
+  /* ===== Core Functions ===== */
+  function reduceVerbSafely(word) {
+    const w = word.toLowerCase();
+    if (WHITELIST.has(w) || w.length < 4 || /[^a-záéíóúâêôãõç]/i.test(w)) return word;
+    const rules = [
+      [/(.+)ei\b/i, "$1ar"], [/(.+)ou\b/i, "$1ar"], [/(.+)am\b/i, "$1ar"], [/(.+)amos\b/i, "$1ar"],
+      [/(.+)aram\b/i, "$1ar"], [/(.+)arão\b/i, "$1ar"], [/(.+)aria\b/i, "$1ar"], [/(.+)asse\b/i, "$1ar"],
+      [/(.+)ava\b/i, "$1ar"], [/(.+)ando\b/i, "$1ar"], [/(.+)ado\b/i, "$1ar"],
+      [/(.+)(emos|eram|erão|eria|esse|endo|ido)\b/i, "$1er"],
+      [/(.+)(imos|iram|irão|iria|isse|indo)\b/i, "$1ir"],
+    ];
+    for (const [re, rep] of rules) { if (re.test(word)) return word.replace(re, rep); }
     return word;
   }
-  const original = word;
 
-  // Regras de redução, da mais específica para a mais geral
-  const rules = [
-    [/(.+)ei\b/i, "$1ar"],      // Falei -> Falar
-    [/(.+)ou\b/i, "$1ar"],      // Falou -> Falar
-    [/(.+)am\b/i, "$1ar"],      // Falam -> Falar
-    [/(.+)amos\b/i, "$1ar"],    // Falamos -> Falar
-    [/(.+)aram\b/i, "$1ar"],    // Falaram -> Falar
-    [/(.+)arão\b/i, "$1ar"],    // Falarão -> Falar
-    [/(.+)aria\b/i, "$1ar"],    // Falaria -> Falar
-    [/(.+)asse\b/i, "$1ar"],    // Falasse -> Falar
-    [/(.+)ava\b/i, "$1ar"],     // Falava -> Falar
-    [/(.+)ando\b/i, "$1ar"],    // Falando -> Falar
-    [/(.+)ado\b/i, "$1ar"],     // Falado -> Falar
-    [/(.+)(emos|eram|erão|eria|esse|endo|ido)\b/i, "$1er"], // Variações de -er
-    [/(.+)(imos|iram|irão|iria|isse|indo)\b/i, "$1ir"], // Variações de -ir
-  ];
+  function splitSentences(t) { return t.replace(/\s+/g, " ").split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(Boolean); }
 
-  for (const [re, rep] of rules) {
-    if (re.test(original)) {
-      return original.replace(re, rep);
-    }
+  function simplifySentence(s) {
+    let out = " " + s.toLowerCase() + " ";
+    SIMPLE_REPLACE.forEach((to, from) => { out = out.replace(new RegExp(`\\b${from}\\b`, "gi"), ` ${to} `); });
+    FILLERS.forEach(w => { out = out.replace(new RegExp(`\\b${w}\\b`, "gi"), " "); });
+    out = out.replace(/\s+/g, " ").trim();
+    return out.charAt(0).toUpperCase() + out.slice(1);
   }
-  return original;
-}
 
-function splitSentences(t) {
-  return t.replace(/\s+/g, " ").split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(Boolean);
-}
-
-function simplifySentence(s) {
-  let out = " " + s.toLowerCase() + " ";
-  SIMPLE_REPLACE.forEach((to, from) => {
-    out = out.replace(new RegExp(`\\b${from}\\b`, "gi"), ` ${to} `);
-  });
-  FILLERS.forEach(w => {
-    out = out.replace(new RegExp(`\\b${w}\\b`, "gi"), " ");
-  });
-  out = out.replace(/\s+/g, " ").trim();
-  return out.charAt(0).toUpperCase() + out.slice(1); // Capitaliza o início
-}
-
-function toLibrasStyleLine(s, opts) {
-  const { strictOrder = true } = opts;
-  let x = s.replace(/["“”'()]+/g, " ");
-  x = x.replace(/[,;:]+/g, " ");
-
-  let tokens = x.split(/\s+/).filter(Boolean).map(t => {
-    const low = t.toLowerCase();
-    if (WHITELIST.has(low)) return t;
-    if (ARTICLES.includes(low)) return "";
-    return t;
-  }).filter(Boolean);
-
-  tokens = tokens.map(t => {
-    if (WHITELIST.has(t.toLowerCase()) || /[A-Z]{2,}/.test(t)) return t;
-    return reduceVerbSafely(t);
-  });
-
-  const tempo = [];
-  const resto = [];
-  tokens.forEach(t => {
-    if (TEMP_MARKERS.includes(t.toLowerCase())) tempo.push(t.toUpperCase());
-    else resto.push(t);
-  });
-
-  const ordered = (strictOrder && tempo.length) ? [...tempo, ...resto] : tokens;
-  return ordered.join(" ").replace(/\s+/g, " ").trim().toUpperCase();
-}
-
-function process() {
-  const generateBtn = document.getElementById('generateBtn');
-  flash(generateBtn, "Gerando...", 10000, true); // Desativa o botão
-
-  // Usar setTimeout para o navegador atualizar a UI antes de processar
-  setTimeout(() => {
-    const input = document.getElementById('input').value.trim();
-    const outSimple = document.getElementById('outSimple');
-    const outLibras = document.getElementById('outLibras');
-    const strictOrder = document.getElementById('strictOrder').checked;
-
-    if (!input) {
-      outSimple.textContent = "";
-      outLibras.textContent = "";
-      flash(generateBtn, "Gerar", 1, false); // Reativa o botão
-      return;
-    }
-
-    const sentences = splitSentences(input);
-    const simpleLines = sentences.map(simplifySentence);
-    const librasLines = sentences.map(s => toLibrasStyleLine(s, { strictOrder }));
-
-    outSimple.innerHTML = simpleLines.map(line => `• ${line}`).join("  
-");
-    outLibras.innerHTML = librasLines.map(line => `• ${line}`).join("  
-");
-
-    flash(generateBtn, "Gerar", 1, false); // Reativa o botão
-  }, 10);
-}
-
-/* ===== UI & Persistence ===== */
-
-// Salva e carrega a lista de exceções
-function loadWhitelist() {
-  const whitelistText = document.getElementById('whitelistBox').value;
-  WHITELIST = new Set(whitelistText.split(/\r?\n/).map(s => s.trim().toLowerCase()).filter(Boolean));
-  localStorage.setItem('userWhitelist', whitelistText);
-  flash(document.querySelector('#whitelistBox + .toolbar button'), "Lista Salva!", 1500);
-}
-
-function restoreWhitelistFromStorage() {
-  const savedList = localStorage.getItem('userWhitelist');
-  if (savedList) {
-    document.getElementById('whitelistBox').value = savedList;
+  function toLibrasStyleLine(s, opts) {
+    const { strictOrder = true } = opts;
+    let x = s.replace(/["“”'()]+/g, " ").replace(/[,;:]+/g, " ");
+    let tokens = x.split(/\s+/).filter(Boolean).map(t => {
+      const low = t.toLowerCase();
+      if (WHITELIST.has(low) || ARTICLES.includes(low)) return "";
+      return t;
+    }).filter(Boolean);
+    tokens = tokens.map(t => {
+      if (WHITELIST.has(t.toLowerCase()) || /[A-Z]{2,}/.test(t)) return t;
+      return reduceVerbSafely(t);
+    });
+    const tempo = [];
+    const resto = [];
+    tokens.forEach(t => { (TEMP_MARKERS.includes(t.toLowerCase()) ? tempo : resto).push(t); });
+    const ordered = (strictOrder && tempo.length) ? [...tempo.map(t => t.toUpperCase()), ...resto] : tokens;
+    return ordered.join(" ").replace(/\s+/g, " ").trim().toUpperCase();
   }
-  loadWhitelist();
-}
 
-function fillSample() {
-  document.getElementById('input').value = "Nós fomos ontem à praia e, francamente, o objetivo era realizar um bom descanso. Posteriormente, nós voltaremos para casa utilizando o mesmo caminho.";
-  process();
-}
+  function process() {
+    flash(generateBtn, "Gerando...", 10000, true);
+    setTimeout(() => {
+      const input = inputEl.value.trim();
+      if (!input) {
+        outSimpleEl.textContent = "";
+        outLibrasEl.textContent = "";
+        flash(generateBtn, "Gerar", 1, false);
+        return;
+      }
+      const sentences = splitSentences(input);
+      const simpleLines = sentences.map(simplifySentence);
+      const librasLines = sentences.map(s => toLibrasStyleLine(s, { strictOrder: strictOrderEl.checked }));
+      outSimpleEl.innerHTML = simpleLines.map(line => `• ${line}`).join("  
+");
+      outLibrasEl.innerHTML = librasLines.map(line => `• ${line}`).join("  
+");
+      flash(generateBtn, "Gerar", 1, false);
+    }, 10);
+  }
 
-function clearAll() {
-  document.getElementById('input').value = "";
-  document.getElementById('outSimple').textContent = "";
-  document.getElementById('outLibras').textContent = "";
-}
+  /* ===== UI & Persistence ===== */
+  function loadWhitelist() {
+    const whitelistText = whitelistBoxEl.value;
+    WHITELIST = new Set(whitelistText.split(/\r?\n/).map(s => s.trim().toLowerCase()).filter(Boolean));
+    localStorage.setItem('userWhitelist', whitelistText);
+    flash(saveWhitelistBtn, "Lista Salva!", 1500);
+  }
 
-function copyOut(selector, btn) {
-  const el = document.querySelector(selector);
-  const text = el.innerText; // Usar innerText para preservar quebras de linha
-  if (!text) return;
+  function restoreWhitelistFromStorage() {
+    const savedList = localStorage.getItem('userWhitelist');
+    if (savedList) { whitelistBoxEl.value = savedList; }
+    loadWhitelist();
+  }
 
-  navigator.clipboard.writeText(text).then(() => {
-    flash(btn, "Copiado!", 1200);
-  }).catch(() => {
-    flash(btn, "Erro ao copiar", 1200);
-  });
-}
+  function fillSample() {
+    inputEl.value = "Nós fomos ontem à praia e, francamente, o objetivo era realizar um bom descanso. Posteriormente, nós voltaremos para casa utilizando o mesmo caminho.";
+    process();
+  }
 
-function flash(btn, msg, duration = 1200, disabled = false) {
-  const oldText = btn.textContent;
-  btn.textContent = msg;
-  btn.disabled = disabled;
-  setTimeout(() => {
-    btn.textContent = oldText;
-    btn.disabled = false;
-  }, duration);
-}
+  function clearAll() {
+    inputEl.value = "";
+    outSimpleEl.textContent = "";
+    outLibrasEl.textContent = "";
+  }
 
-// Inicialização
-document.addEventListener('DOMContentLoaded', restoreWhitelistFromStorage);
+  function copyOut(selector, btn) {
+    const el = document.querySelector(selector);
+    const text = el.innerText;
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => flash(btn, "Copiado!", 1200)).catch(() => flash(btn, "Erro", 1200));
+  }
+
+  function flash(btn, msg, duration = 1200, disabled = false) {
+    const oldText = btn.textContent;
+    btn.textContent = msg;
+    btn.disabled = disabled;
+    setTimeout(() => {
+      btn.textContent = oldText;
+      btn.disabled = false;
+    }, duration);
+  }
+
+  /* ===== Event Listeners ===== */
+  generateBtn.addEventListener('click', process);
+  sampleBtn.addEventListener('click', fillSample);
+  clearBtn.addEventListener('click', clearAll);
+  saveWhitelistBtn.addEventListener('click', loadWhitelist);
+  copySimpleBtn.addEventListener('click', () => copyOut('#outSimple', copySimpleBtn));
+  copyLibrasBtn.addEventListener('click', () => copyOut('#outLibras', copyLibrasBtn));
+
+  // Inicialização
+  restoreWhitelistFromStorage();
+});
 </script>
 </body>
 </html>
