@@ -22,6 +22,9 @@
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
     .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
     label{display:inline-flex;gap:8px;align-items:center;cursor:pointer}
+    /* Estilos para a nova seção de exceções */
+    #whitelistContainer { display: none; margin-top: 16px; }
+    #toggleWhitelist { cursor: pointer; color: #007bff; text-decoration: underline; font-size: .9rem; }
   </style>
 </head>
 <body>
@@ -43,94 +46,56 @@
       </div>
 
       <div class="toolbar">
-        <button id="sampleBtn">Exemplo</button>
-        <button id="clearBtn">Limpar</button>
-        <button id="generateBtn" class="primary">Gerar</button>
+        <button onclick="fillSample()">Exemplo</button>
+        <button onclick="clearAll()">Limpar</button>
+        <button id="generateBtn" class="primary" onclick="process()">Gerar</button>
+      </div>
+      
+      <div style="margin-top: 16px;">
+        <a id="toggleWhitelist" onclick="toggleWhitelist()">Editar exceções</a>
+        <div id="whitelistContainer">
+          <p class="small" style="margin-top:8px;">Palavras que não devem ser alteradas (uma por linha). A lista salva automaticamente.</p>
+          <textarea id="whitelistBox" onkeyup="saveWhitelist()"></textarea>
+        </div>
       </div>
     </div>
 
     <div class="card">
-      <h3>Lista de Exceções</h3>
-      <p class="small">Palavras que não devem ser alteradas (uma por linha). Sua lista é salva no navegador.</p>
-      <textarea id="whitelistBox">discipulado
-família
-famílias
-comunidade
-comunidades
-verdade
-belo
-bom
-Salmo
-Salmos
-Libras
-Português
-Bíblia</textarea>
-      <div class="toolbar">
-        <button id="saveWhitelistBtn">Salvar e Aplicar Lista</button>
+      <h3>Resultados</h3>
+      <div class="grid">
+        <div>
+          <h4>Versão Simplificada</h4>
+          <div class="toolbar">
+            <button onclick="copyOut('#outSimple', this)">Copiar</button>
+          </div>
+          <div id="outSimple" class="out"></div>
+        </div>
+        <div>
+          <h4>Versão Estilo Libras</h4>
+          <div class="toolbar">
+            <button onclick="copyOut('#outLibras', this)">Copiar</button>
+          </div>
+          <div id="outLibras" class="out mono"></div>
+        </div>
       </div>
-    </div>
-  </div>
-
-  <div class="grid" style="margin-top:16px">
-    <div class="card">
-      <h3>Versão Simplificada</h3>
-      <div class="toolbar">
-        <button id="copySimpleBtn">Copiar</button>
-      </div>
-      <div id="outSimple" class="out"></div>
-    </div>
-
-    <div class="card">
-      <h3>Versão Estilo Libras</h3>
-      <div class="toolbar">
-        <button id="copyLibrasBtn">Copiar</button>
-      </div>
-      <div id="outLibras" class="out mono"></div>
     </div>
   </div>
 
 <script>
-// Aguarda o carregamento completo do HTML antes de executar qualquer script
-document.addEventListener('DOMContentLoaded', () => {
-
-  /* ===== Elementos da UI ===== */
-  const inputEl = document.getElementById('input');
-  const outSimpleEl = document.getElementById('outSimple');
-  const outLibrasEl = document.getElementById('outLibras');
-  const strictOrderEl = document.getElementById('strictOrder');
-  const whitelistBoxEl = document.getElementById('whitelistBox');
-  const generateBtn = document.getElementById('generateBtn');
-  const sampleBtn = document.getElementById('sampleBtn');
-  const clearBtn = document.getElementById('clearBtn');
-  const saveWhitelistBtn = document.getElementById('saveWhitelistBtn');
-  const copySimpleBtn = document.getElementById('copySimpleBtn');
-  const copyLibrasBtn = document.getElementById('copyLibrasBtn');
-
   /* ===== Config & State ===== */
   let WHITELIST = new Set();
 
   const SIMPLE_REPLACE = new Map(Object.entries({
-    "todavia":"mas", "entretanto":"mas", "porém":"mas", "contudo":"mas",
-    "consequentemente":"por isso", "portanto":"por isso",
-    "posteriormente":"depois", "anteriormente":"antes",
-    "frequentemente": "muitas vezes",
-    "prover": "dar", "fornecer": "dar",
-    "obter": "conseguir", "alcançar": "conseguir",
-    "realizar": "fazer", "efetuar": "fazer",
-    "utilizar": "usar",
-    "essencial": "importante", "fundamental": "importante",
-    "harmonia": "paz",
-    "denota": "mostra",
-    "necessário": "precisa",
-    "demonstrar": "mostrar",
-    "objetivo": "meta",
+    "todavia":"mas", "entretanto":"mas", "porém":"mas", "contudo":"mas", "consequentemente":"por isso", "portanto":"por isso",
+    "posteriormente":"depois", "anteriormente":"antes", "frequentemente": "muitas vezes", "prover": "dar", "fornecer": "dar",
+    "obter": "conseguir", "alcançar": "conseguir", "realizar": "fazer", "efetuar": "fazer", "utilizar": "usar",
+    "essencial": "importante", "fundamental": "importante", "harmonia": "paz", "denota": "mostra", "necessário": "precisa",
+    "demonstrar": "mostrar", "objetivo": "meta",
   }));
 
   const ARTICLES = ["o","a","os","as","um","uma","uns","umas","do","da","dos","das","ao","à","aos","às","no","na","nos","nas"];
   const FILLERS = ["realmente","basicamente","literalmente","provavelmente","talvez","certamente","claramente","apenas","somente","inclusive","muito","pouco"];
-  const TEMP_MARKERS = ["hoje","amanhã","ontem","agora","depois","antes","cedo","tarde","noite",
-    "segunda","terça","quarta","quinta","sexta","sábado","domingo",
-    "janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+  const TEMP_MARKERS = ["hoje","amanhã","ontem","agora","depois","antes","cedo","tarde","noite", "segunda","terça","quarta","quinta","sexta","sábado","domingo", "janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
 
   /* ===== Core Functions ===== */
   function reduceVerbSafely(word) {
@@ -177,49 +142,69 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function process() {
+    const generateBtn = document.getElementById('generateBtn');
     flash(generateBtn, "Gerando...", 10000, true);
     setTimeout(() => {
-      const input = inputEl.value.trim();
+      const input = document.getElementById('input').value.trim();
+      const outSimple = document.getElementById('outSimple');
+      const outLibras = document.getElementById('outLibras');
       if (!input) {
-        outSimpleEl.textContent = "";
-        outLibrasEl.textContent = "";
+        outSimple.textContent = "";
+        outLibras.textContent = "";
         flash(generateBtn, "Gerar", 1, false);
         return;
       }
       const sentences = splitSentences(input);
       const simpleLines = sentences.map(simplifySentence);
-      const librasLines = sentences.map(s => toLibrasStyleLine(s, { strictOrder: strictOrderEl.checked }));
-      outSimpleEl.innerHTML = simpleLines.map(line => `• ${line}`).join("  
+      const librasLines = sentences.map(s => toLibrasStyleLine(s, { strictOrder: document.getElementById('strictOrder').checked }));
+      outSimple.innerHTML = simpleLines.map(line => `• ${line}`).join("  
 ");
-      outLibrasEl.innerHTML = librasLines.map(line => `• ${line}`).join("  
+      outLibras.innerHTML = librasLines.map(line => `• ${line}`).join("  
 ");
       flash(generateBtn, "Gerar", 1, false);
     }, 10);
   }
 
   /* ===== UI & Persistence ===== */
-  function loadWhitelist() {
-    const whitelistText = whitelistBoxEl.value;
+  function saveWhitelist() {
+    const whitelistText = document.getElementById('whitelistBox').value;
     WHITELIST = new Set(whitelistText.split(/\r?\n/).map(s => s.trim().toLowerCase()).filter(Boolean));
     localStorage.setItem('userWhitelist', whitelistText);
-    flash(saveWhitelistBtn, "Lista Salva!", 1500);
   }
 
   function restoreWhitelistFromStorage() {
     const savedList = localStorage.getItem('userWhitelist');
-    if (savedList) { whitelistBoxEl.value = savedList; }
-    loadWhitelist();
+    const whitelistBox = document.getElementById('whitelistBox');
+    if (savedList) {
+      whitelistBox.value = savedList;
+    } else {
+      // Preenche com a lista padrão se não houver nada salvo
+      whitelistBox.value = "discipulado\nfamília\nfamílias\ncomunidade\ncomunidades\nverdade\nbelo\nbom\nSalmo\nSalmos\nLibras\nPortuguês\nBíblia";
+    }
+    saveWhitelist(); // Salva e carrega a lista no WHITELIST
+  }
+
+  function toggleWhitelist() {
+    const container = document.getElementById('whitelistContainer');
+    const link = document.getElementById('toggleWhitelist');
+    if (container.style.display === 'none') {
+      container.style.display = 'block';
+      link.textContent = 'Ocultar exceções';
+    } else {
+      container.style.display = 'none';
+      link.textContent = 'Editar exceções';
+    }
   }
 
   function fillSample() {
-    inputEl.value = "Nós fomos ontem à praia e, francamente, o objetivo era realizar um bom descanso. Posteriormente, nós voltaremos para casa utilizando o mesmo caminho.";
+    document.getElementById('input').value = "Nós fomos ontem à praia e, francamente, o objetivo era realizar um bom descanso. Posteriormente, nós voltaremos para casa utilizando o mesmo caminho.";
     process();
   }
 
   function clearAll() {
-    inputEl.value = "";
-    outSimpleEl.textContent = "";
-    outLibrasEl.textContent = "";
+    document.getElementById('input').value = "";
+    document.getElementById('outSimple').textContent = "";
+    document.getElementById('outLibras').textContent = "";
   }
 
   function copyOut(selector, btn) {
@@ -239,17 +224,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }, duration);
   }
 
-  /* ===== Event Listeners ===== */
-  generateBtn.addEventListener('click', process);
-  sampleBtn.addEventListener('click', fillSample);
-  clearBtn.addEventListener('click', clearAll);
-  saveWhitelistBtn.addEventListener('click', loadWhitelist);
-  copySimpleBtn.addEventListener('click', () => copyOut('#outSimple', copySimpleBtn));
-  copyLibrasBtn.addEventListener('click', () => copyOut('#outLibras', copyLibrasBtn));
-
   // Inicialização
   restoreWhitelistFromStorage();
-});
 </script>
 </body>
 </html>
