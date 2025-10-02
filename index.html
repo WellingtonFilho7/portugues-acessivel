@@ -282,10 +282,22 @@ function toLibrasStyleLine(s, opts){
   // 2. Remove clíticos antes de outras transformações
   s = removeClitics(s);
 
+  
   // 3. Reduz verbos (se a opção estiver ativada)
-  if(reduce){
-    s = s.split(/\s+/).map(reduceVerbSafely).join(' ');
-  }
+if (reduce) {
+  // tokens funcionais que terminam em -ndo/-ado/-ido mas não são verbos
+  const NON_VERB_TOKENS = new Set(['quando']);
+  // só reduz quando bater com terminações típicas de formas verbais
+  const reducibleSuffix = /(ando|endo|indo|ados?|idos?|arem|erem|irem|arão|erão|irão)$/i;
+
+  s = s.split(/\s+/).map(w => {
+    const lw = w.toLowerCase();
+    if (NON_VERB_TOKENS.has(lw)) return w;      // preserva "quando"
+    if (!reducibleSuffix.test(lw)) return w;    // não parece forma verbal → não reduz
+    return reduceVerbSafely(w);                 // reduz com a função existente
+  }).join(' ');
+}
+
 
   // 4. Aplica o dicionário agressivo (depois da redução)
   s = aggressiveSubstitutions(s);
