@@ -5,315 +5,373 @@
   <title>Português Acessível para Surdos</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    /* --- Geral e Tipografia --- */
-    body {
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Inter, sans-serif;
-      background-color: #f5f3ef; /* Bege */
-      color: #1a1a1a; /* Preto */
-      max-width: 980px;
-      margin: 24px auto;
-      padding: 0 16px;
-      line-height: 1.6;
+    :root{
+      --bg:#f5f3ef; --text:#1a1a1a; --accent:#d65a38; --accent2:#f2a735; --card:#fafafa; --line:#eee;
     }
-    h1 {
-      font-size: 1.75rem;
-      color: #1a1a1a;
-      text-align: center;
-      margin-bottom: 8px;
-    }
-    p.subtitle {
-      text-align: center;
-      margin-top: 0;
-      color: #555;
-    }
-    h3 {
-      margin-top: 0;
-      color: #d65a38; /* Acento Laranja/Vermelho */
-    }
-
-    /* --- Layout e Cards --- */
-    .grid {
-      display: grid;
-      gap: 20px;
-    }
-    @media(min-width: 800px) {
-      .grid { grid-template-columns: 1fr 1fr; }
-    }
-    .card {
-      background-color: #fff;
-      border: 1px solid #e0e0e0;
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-    }
-
-    /* --- Formulários e Botões --- */
-    textarea {
-      width: 100%;
-      min-height: 180px;
-      padding: 12px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      resize: vertical;
-      font-size: 1rem;
-      box-sizing: border-box;
-    }
-    textarea:focus {
-      border-color: #f2a735; /* Acento Amarelo */
-      outline: 2px solid #f2a735;
-    }
-    .toolbar {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-top: 12px;
-    }
-    button {
-      padding: 10px 16px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      background-color: #fff;
-      cursor: pointer;
-      font-weight: 500;
-      font-size: 0.95rem;
-      transition: background-color 0.2s, border-color 0.2s;
-    }
-    button:hover {
-      background-color: #f0f0f0;
-      border-color: #bbb;
-    }
-    .primary {
-      background-color: #d65a38;
-      color: white;
-      border-color: #d65a38;
-    }
-    .primary:hover {
-      background-color: #b84a2a;
-      border-color: #b84a2a;
-    }
-
-    /* --- Saídas --- */
-    .output-box {
-      background-color: #f5f3ef;
-      border: 1px solid #e0e0e0;
-      border-radius: 8px;
-      padding: 15px;
-      min-height: 100px;
-      white-space: pre-wrap;
-      font-size: 1rem;
-    }
-    .output-box.mono {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    }
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Inter,sans-serif;background:var(--bg);color:var(--text);max-width:980px;margin:24px auto;padding:0 16px;line-height:1.5}
+    h1{font-size:1.35rem;margin:0 0 8px}
+    .grid{display:grid;gap:16px}
+    @media(min-width:940px){.grid{grid-template-columns:1fr 1fr}}
+    .card{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--card);box-shadow:0 1px 0 rgba(0,0,0,.02)}
+    textarea{width:100%;min-height:180px;padding:12px;border:1px solid #ddd;border-radius:10px;background:#fff}
+    .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+    button{padding:10px 12px;border:1px solid #ddd;border-radius:10px;background:#fff;cursor:pointer}
+    button:hover{background:#f2f2f2}
+    .small{font-size:.9rem;color:#555}
+    .out{white-space:pre-wrap;background:#fff;padding:10px;border:1px solid #eee;border-radius:10px}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+    .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+    label{display:inline-flex;gap:8px;align-items:center}
+    .badge{display:inline-block;background:var(--accent2);color:#000;padding:2px 8px;border-radius:999px;font-size:.8rem}
   </style>
 </head>
 <body>
-
-  <h1>Português Acessível</h1>
-  <p class="subtitle">Adapte textos para uma comunicação mais clara e direta.</p>
+  <h1>Português Acessível para Surdos</h1>
+  <p class="small">Escolha o modo. Para textos de opinião e feedback, use Simplificado leve. Para aproximação da lógica da Libras, use Estilo Libras. <span class="badge">Nova regra: dicionário agressivo em Libras</span></p>
 
   <div class="grid">
-    <!-- Coluna de Entrada -->
     <div class="card">
-      <h3>Texto Original</h3>
+      <h3>Entrada</h3>
       <textarea id="input" placeholder="Cole seu texto aqui..."></textarea>
+
+      <div class="row" style="margin:8px 0">
+        <label><input type="radio" name="mode" value="simple" checked> Simplificado leve</label>
+        <label><input type="radio" name="mode" value="libras"> Estilo Libras</label>
+      </div>
+
+      <div class="row" style="margin:8px 0">
+        <label class="small"><input type="checkbox" id="strictOrder" checked> Tempo no início quando houver</label>
+        <label class="small"><input type="checkbox" id="reduceVerbs"> Reduzir verbos (avançado)</label>
+        <label class="small"><input type="checkbox" id="useWhitelist" checked> Respeitar lista de exceções</label>
+      </div>
+
       <div class="toolbar">
         <button onclick="fillSample()">Exemplo</button>
         <button onclick="clearAll()">Limpar</button>
-        <button class="primary" onclick="process()">Gerar</button>
+        <button onclick="process()">Gerar</button>
       </div>
     </div>
 
-    <!-- Coluna de Saída -->
     <div class="card">
-      <h3>Versões Adaptadas</h3>
-      
-      <h4>Simplificado Leve</h4>
-      <div id="outSimple" class="output-box"></div>
+      <h3>Lista de exceções</h3>
+      <p class="small">Palavras que não devem ser alteradas. Uma por linha. Edite à vontade.</p>
+      <textarea id="whitelistBox">discipulado
+família
+famílias
+comunidade
+comunidades
+verdade
+belo
+bom
+Salmo
+Salmos
+Libras
+Português
+Bíblia</textarea>
       <div class="toolbar">
-        <button onclick="copyOut('#outSimple', this)">Copiar</button>
-      </div>
-
-      <h4 style="margin-top: 20px;">Estilo Libras</h4>
-      <div id="outLibras" class="output-box mono"></div>
-      <div class="toolbar">
-        <button onclick="copyOut('#outLibras', this)">Copiar</button>
+        <button onclick="loadWhitelist()">Aplicar exceções</button>
       </div>
     </div>
   </div>
 
+  <div class="grid" style="margin-top:16px">
+    <div class="card">
+      <h3>Versão simplificada</h3>
+      <div class="toolbar">
+        <button onclick="copyOut('#outSimple', this)">Copiar</button>
+      </div>
+      <div id="outSimple" class="out"></div>
+    </div>
+
+    <div class="card">
+      <h3>Versão estilo Libras</h3>
+      <div class="toolbar">
+        <button onclick="copyOut('#outLibras', this)">Copiar</button>
+      </div>
+      <div id="outLibras" class="out mono"></div>
+      <p class="small">Regras: dicionário agressivo, remoção de ligações, infinitivo, pausas com vírgula, linhas curtas.</p>
+    </div>
+  </div>
+
 <script>
-/* ===== Regras e Configurações ===== */
-const KEY_TERMS = new Set(["família", "comunidade", "discipulado", "libras", "deus", "bíblia"]);
+/* ===== Config ===== */
+let WHITELIST = new Set();
+function loadWhitelist(){
+  const lines = document.getElementById('whitelistBox').value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+  WHITELIST = new Set(lines.map(x=> x.toLowerCase()));
+}
+loadWhitelist();
 
-const GIRA_REPLACE = {
-  "tô": "estou", "tá": "está", "pra": "para", "pro": "para o",
-  "vc": "você", "cê": "você", "q": "que"
-};
-
-const SIMPLE_REPLACE = {
-  "entretanto": "mas", "todavia": "mas", "porém": "mas",
-  "consequentemente": "por isso", "portanto": "por isso",
-  "posteriormente": "depois", "anteriormente": "antes"
-};
-
-const FILLERS = ["realmente", "basicamente", "literalmente", "inclusive", "apenas", "simplesmente"];
-const ARTICLES = ["o", "a", "os", "as", "um", "uma", "uns", "umas", "do", "da", "dos", "das", "no", "na", "nos", "nas"];
-const TEMP_MARKERS = ["hoje", "amanhã", "ontem", "agora", "depois", "antes", "cedo", "tarde", "noite", "segunda", "terça", "quarta", "quinta", "sexta", "sábado", "domingo"];
-
-/* ===== Funções de Transformação ===== */
-
-function normalizeGiras(text) {
-  let normalized = text.toLowerCase();
-  for (const [giria, normal] of Object.entries(GIRA_REPLACE)) {
-    normalized = normalized.replace(new RegExp(`\\b${giria}\\b`, 'g'), normal);
-  }
-  return normalized;
+/* ===== Normalização leve ===== */
+function normalizeCommon(t){
+  return t
+    .replace(/\btô\b/gi, "estou")
+    .replace(/\btá\b/gi, "está")
+    .replace(/\bpra\b/gi, "para")
+    .replace(/\bpro\b/gi, "para o")
+    .replace(/\bcê\b/gi, "você")
+    .replace(/\bvc\b/gi, "você")
+    .replace(/\bq\b/gi, "que");
 }
 
-function splitSentences(text) {
-  // Quebra em sentenças, considerando . ! ? e vírgulas antes de maiúsculas.
-  return text.replace(/([.!?])\s*(?=[A-Z])/g, "$1|").split('|').map(s => s.trim()).filter(Boolean);
-}
+/* ===== Regras ===== */
+const TEMP_MARKERS = ["hoje","amanhã","ontem","agora","depois","antes","cedo","tarde","noite",
+  "segunda","terça","quarta","quinta","sexta","sábado","domingo",
+  "janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
 
-function toSimple(sentence) {
-  let s = sentence.toLowerCase();
-  for (const [word, replacement] of Object.entries(SIMPLE_REPLACE)) {
-    s = s.replace(new RegExp(`\\b${word}\\b`, 'g'), replacement);
-  }
-  for (const filler of FILLERS) {
-    s = s.replace(new RegExp(`\\b${filler}\\b`, 'g'), '');
-  }
-  s = s.replace(/\s+/g, ' ').trim();
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
+const FILLERS = ["realmente","basicamente","literalmente","provavelmente","talvez","certamente","claramente","apenas","somente","inclusive"];
+const SIMPLE_REPLACE = new Map(Object.entries({
+  "todavia":"mas","entretanto":"mas","porém":"mas",
+  "consequentemente":"por isso","posteriormente":"depois","anteriormente":"antes"
+}));
 
-function toLibras(sentence) {
-  let s = normalizeGiras(sentence);
-  
-  // Remove pontuações que não sejam de fim de frase
-  s = s.replace(/[,;:“”"()]/g, '');
+// Dicionário de Substituições Agressivo (multi-palavra primeiro)
+const AGGR_MAP = [
+  ["prática educacional","jeito de ensinar"],
+  ["voz de apoio","pessoa que ajuda"],
+  ["comunicação","conversa"],
+  ["conectar-se","juntar"],
+  ["conectar","conectar"], // fallback simples
+  ["desenvolver","crescer"],
+  ["aprimorar","melhorar"],
+  ["aperfeiçoar","melhorar"],
+  ["convicção","certeza"],
+  ["crença","acreditar"],
+  ["jornada","história"],
+  ["trajetória","caminho"],
+  ["conquista","vitória"],
+  ["encorajamento","ânimo"],
+  ["experiência","vivência"],
+  ["o que viveu","vivência"],
+  ["contribuir","ajudar"],
+  ["fortalecer","ficar forte"],
+  ["documentar","registrar"],
+  ["celebrar","comemorar"],
+  ["manter-se firme","ficar firme"],
+  ["dúvidas","perguntas"],
+  ["enfrentou","passou"],
+  ["conectar-se","juntar"]
+].sort((a,b)=> b[0].length - a[0].length); // maior primeiro
 
-  let tokens = s.split(/\s+/).filter(Boolean);
-  let finalTokens = [];
-  
-  let timeMarkers = [];
-  let otherTokens = [];
+// Ligações a remover agressivamente em Libras
+const LINKERS = new Set([
+  "de","do","da","dos","das",
+  "em","no","na","nos","nas",
+  "para","pra","por","com","sem","sobre","até","desde","entre","a","ao","à","aos","às",
+  "e","mas","ou","que","porque","pois"
+]);
 
-  // Redução de verbos (simplificada)
-  const reduceVerb = (word) => {
-    if (word.length < 4) return word;
-    const endings = [
-      {suf: "ando", repl: "ar"}, {suf: "endo", repl: "er"}, {suf: "indo", repl: "ir"},
-      {suf: "ou", repl: "ar"}, {suf: "eu", repl: "er"}, {suf: "iu", repl: "ir"},
-      {suf: "amos", repl: "ar"}, {suf: "emos", repl: "er"}, {suf: "imos", repl: "ir"},
-      {suf: "aram", repl: "ar"}, {suf: "eram", repl: "er"}, {suf: "iram", repl: "ir"}
-    ];
-    for (const {suf, repl} of endings) {
-      if (word.endsWith(suf)) {
-        return word.slice(0, -suf.length) + repl;
-      }
+// redução de verbos (opcional, segura)
+function reduceVerbSafely(word){
+  const w = word.toLowerCase();
+  if (WHITELIST.has(w)) return word;
+  if (w.length < 7) return word;
+  if (/[^a-záéíóúâêôãõç]/i.test(w)) return word;
+  const rules = [
+    [/(.+?)(amos|emos|imos)\b/i, "$1r"],
+    [/(.+?)(rei|rás|rá|remos|reis|rão)\b/i,"$1r"],
+    [/(.+?)(ava|ia|avam|iam)\b/i,"$1r"],
+    [/(.+?)(ei|ou|eu|ram)\b/i,"$1r"],
+  ];
+  let out = word;
+  for (const [re, rep] of rules){
+    if (re.test(out)) {
+      const cand = out.replace(re, rep);
+      if (/(ar|er|ir)\b/i.test(cand) && cand.length >= 6) out = cand;
+      break;
     }
-    return word;
-  };
+  }
+  return out;
+}
 
-  tokens.forEach(token => {
-    const lowerToken = token.toLowerCase();
-    if (KEY_TERMS.has(lowerToken)) {
-      otherTokens.push(token.toUpperCase());
-    } else if (TEMP_MARKERS.includes(lowerToken)) {
-      timeMarkers.push(token.toUpperCase());
-    } else if (!ARTICLES.includes(lowerToken)) {
-      otherTokens.push(reduceVerb(lowerToken).toUpperCase());
-    }
+/* ===== Pipeline ===== */
+function splitSentences(t){
+  return t
+    .replace(/\s+/g," ")
+    .split(/(?<=[\.\!\?\;])\s+|,\s+(?=[A-ZÁÉÍÓÚÃÕÂÊÔ0-9])/g)
+    .map(s=>s.trim())
+    .filter(Boolean);
+}
+
+function simplifySentence(s){
+  let out = " " + s + " ";
+  SIMPLE_REPLACE.forEach((to,from)=>{
+    out = out.replace(new RegExp("\\b"+from+"\\b","gi"), to);
+  });
+  FILLERS.forEach(w=>{
+    out = out.replace(new RegExp("\\b"+w+"\\b","gi"), " ");
+  });
+  out = out.replace(/\s+/g," ").trim();
+  return out;
+}
+
+// aplica dicionário agressivo antes do estilo Libras
+function aggressiveSubstitutions(text){
+  let t = " " + text + " ";
+  for (const [from,to] of AGGR_MAP){
+    const re = new RegExp("(\\b)"+from.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+"(\\b)","gi");
+    t = t.replace(re, `$1${to}$2`);
+  }
+  return t.trim();
+}
+
+function toLibrasStyleLine(s, opts){
+  const { strictOrder=true, reduce=false } = opts;
+
+  // 0) dicionário agressivo
+  s = aggressiveSubstitutions(s);
+
+  // 1) limpar aspas/parênteses leves
+  let x = s.replace(/[\"\“\”\'\(\)]+/g," ");
+
+  // 2) remover pontuação intermediária
+  x = x.replace(/[\,\;\:]+/g," ");
+
+  // 3) tokenizar
+  let tokens = x.split(/\s+/).filter(Boolean);
+
+  // 4) remoção agressiva de ligações, respeitando whitelist
+  tokens = tokens.filter(t=>{
+    const low = t.toLowerCase();
+    if (WHITELIST.has(low)) return true;
+    if (LINKERS.has(low)) return false;
+    return true;
   });
 
-  finalTokens = [...timeMarkers, ...otherTokens];
-  
-  // Limita o tamanho da linha e adiciona vírgulas
-  let line = finalTokens.join(' ');
-  if (finalTokens.length > 12) {
-      const mid = Math.ceil(finalTokens.length / 2);
-      const part1 = finalTokens.slice(0, mid).join(' ');
-      const part2 = finalTokens.slice(mid).join(' ');
-      line = `${part1},\n• ${part2}`;
+  // 5) normalizar infinitivo com redução opcional
+  tokens = tokens.map(t=>{
+    const low = t.toLowerCase();
+    if (WHITELIST.has(low)) return t;
+    if (reduce && !/[A-Z]{2,}/.test(t)) return reduceVerbSafely(t);
+    return t;
+  });
+
+  // 6) marcador FUTURO quando houver "quando" na sentença original
+  const hasQuando = /\bquando\b/i.test(s);
+  if (hasQuando) tokens.unshift("FUTURO");
+
+  // 7) tempo no início
+  const tempo = [], resto = [];
+  tokens.forEach(t=>{
+    if (TEMP_MARKERS.includes(t.toLowerCase())) tempo.push(t.toUpperCase());
+    else resto.push(t);
+  });
+  let ordered = (strictOrder && (tempo.length)) ? [...tempo, ...resto] : tokens;
+
+  // 8) caixa alta
+  let upper = ordered.join(" ").replace(/\s+/g," ").trim().toUpperCase();
+
+  // 9) pausas e linhas curtas: quebre por excesso de palavras em ~12–15
+  const MAX = 14;
+  const words = upper.split(" ");
+  const lines = [];
+  let buf = [];
+  for (const w of words){
+    buf.push(w);
+    if (buf.length >= MAX){
+      lines.push(buf.join(" "));
+      buf = [];
+    }
   }
-  
-  return line;
+  if (buf.length) lines.push(buf.join(" "));
+
+  // 10) refinamento de pausas: inserir vírgula entre blocos de ações simples
+  const withPauses = lines.map(line=>{
+    // heurística: se houver 3 ou mais verbos no infinitivo (terminando em AR/ER/IR), inserir vírgulas entre grupos
+    const parts = line.split(" ");
+    let out = [];
+    let verbsSeen = 0;
+    for (let i=0;i<parts.length;i++){
+      const p = parts[i];
+      out.push(p);
+      if (/(AR|ER|IR)$/.test(p)) {
+        verbsSeen++;
+        if (verbsSeen>=1) out.push(",");
+      }
+    }
+    // limpar vírgula final
+    let txt = out.join(" ").replace(/\s+,/g,",").replace(/,\s*$/,"");
+    return txt;
+  });
+
+  // 11) retornar uma ou mais linhas
+  return withPauses;
 }
 
-/* ===== Funções de UI (Interface do Usuário) ===== */
+/* ===== UI ===== */
+function process(){
+  const raw = document.getElementById('input').value.trim();
+  const outSimple = document.getElementById('outSimple');
+  const outLibras = document.getElementById('outLibras');
+  if(!raw){ outSimple.textContent=""; outLibras.textContent=""; return; }
 
-function process() {
-  const input = document.getElementById('input').value;
-  if (!input.trim()) return;
+  const mode = document.querySelector('input[name="mode"]:checked').value;
+  const strictOrder = document.getElementById('strictOrder').checked;
+  const reduce = document.getElementById('reduceVerbs').checked;
 
-  const sentences = splitSentences(input);
+  const normalized = normalizeCommon(raw);
+  const sentences = splitSentences(normalized);
 
-  // Geração do Simplificado Leve
-  const simpleOutput = sentences.map(s => `• ${toSimple(s)}`).join('\n');
-  document.getElementById('outSimple').textContent = simpleOutput;
+  // Simplificado leve
+  const simpleLines = sentences.map(simplifySentence);
+  outSimple.textContent = "• " + simpleLines.join("\n• ");
 
-  // Geração do Estilo Libras
-  const librasOutput = sentences.map(s => `• ${toLibras(s)}`).join('\n');
-  document.getElementById('outLibras').textContent = librasOutput;
+  // Estilo Libras
+  const librasAll = [];
+  sentences.forEach(s=>{
+    const ls = toLibrasStyleLine(s, {strictOrder, reduce});
+    ls.forEach(line=> librasAll.push("• " + line));
+  });
+  outLibras.textContent = librasAll.join("\n");
+
+  // rolar um pouco para as saídas no mobile
+  outSimple.scrollIntoView({behavior:"smooth", block:"start"});
 }
 
-function fillSample() {
-  document.getElementById('input').value = "Continue aprendendo conectando-se com outras famílias e aprimorando sua prática educacional. Quando outras mães passarem pelas mesmas dúvidas que você enfrentou, seja a voz de apoio e encorajamento que gostaria de ter ouvido.";
+function fillSample(){
+  // Casos de teste atualizados como fonte da verdade
+  const exemplo = [
+"Continue aprendendo, conectando-se com outras famílias e aprimorando sua prática educacional.",
+"Quando outras mães passarem pelas mesmas dúvidas que você enfrentou, seja a voz de apoio e encorajamento que gostaria de ter ouvido.",
+"Documente a jornada de seus filhos, celebre as conquistas e mantenha-se firme em sua convicção."
+  ].join(" ");
+  document.getElementById('input').value = exemplo;
   process();
 }
 
-function clearAll() {
+function clearAll(){
   document.getElementById('input').value = "";
   document.getElementById('outSimple').textContent = "";
   document.getElementById('outLibras').textContent = "";
 }
 
-function copyOut(selector, btn) {
+function copyOut(selector, btn){
   const el = document.querySelector(selector);
   const text = el.textContent;
-  if (!text) return;
-
-  // Abordagem moderna (compatível com iPhone/HTTPS)
   if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(text)
-      .then(() => flash(btn, "Copiado!"))
-      .catch(() => legacyCopy(text, btn)); // Fallback se a permissão falhar
+    navigator.clipboard.writeText(text).then(()=> flash(btn,"Copiado")).catch(()=> legacyCopy(text,btn));
   } else {
-    // Fallback para HTTP ou navegadores antigos
     legacyCopy(text, btn);
   }
 }
-
-function legacyCopy(text, btn) {
+function legacyCopy(text, btn){
   const ta = document.createElement('textarea');
   ta.value = text;
-  ta.style.position = 'fixed'; // Fora da tela
+  ta.style.position = 'fixed';
   ta.style.opacity = '0';
   document.body.appendChild(ta);
   ta.focus();
   ta.select();
-  try {
-    document.execCommand('copy');
-    flash(btn, "Copiado!");
-  } catch (e) {
-    flash(btn, "Erro ao copiar");
-  }
+  try{ document.execCommand('copy'); flash(btn,"Copiado"); }
+  catch(e){ flash(btn,"Selecione e copie"); }
   document.body.removeChild(ta);
 }
-
-function flash(btn, msg) {
-  const originalText = btn.textContent;
+function flash(btn, msg){
+  const old = btn.textContent;
   btn.textContent = msg;
-  btn.disabled = true;
-  setTimeout(() => {
-    btn.textContent = originalText;
-    btn.disabled = false;
-  }, 1200);
+  setTimeout(()=> btn.textContent = old, 1200);
 }
 </script>
-
 </body>
 </html>
 
