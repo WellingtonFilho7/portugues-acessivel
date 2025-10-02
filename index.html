@@ -2,60 +2,95 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <title>Português Acessível para Surdos</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    :root{
-      --bg:#f5f3ef; --text:#1a1a1a; --accent:#d65a38; --accent2:#f2a735; --card:#fafafa; --line:#eee;
+  <title>Português Acessível (Libras)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Ferramenta para simplificar e reestruturar textos no Estilo Libras, com UI limpa e responsiva.">
+
+  <!-- PWA -->
+  <meta name="theme-color" content="#1e3a8a">
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Português Acessível">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#1e3a8a',
+            secondary: '#3b82f6',
+            accent: '#f59e0b',
+            background: '#f9fafb',
+            card: '#ffffff',
+            textdark: '#1f2937',
+            textlight: '#4b5563',
+          }
+        }
+      }
     }
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Inter,sans-serif;background:var(--bg);color:var(--text);max-width:980px;margin:24px auto;padding:0 16px;line-height:1.5}
-    h1{font-size:1.35rem;margin:0 0 8px}
-    .grid{display:grid;gap:16px}
-    @media(min-width:940px){.grid{grid-template-columns:1fr 1fr}}
-    .card{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--card);box-shadow:0 1px 0 rgba(0,0,0,.02)}
-    textarea{width:100%;min-height:180px;padding:12px;border:1px solid #ddd;border-radius:10px;background:#fff}
-    .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
-    button{padding:10px 12px;border:1px solid #ddd;border-radius:10px;background:#fff;cursor:pointer}
-    button:hover{background:#f2f2f2}
-    .small{font-size:.9rem;color:#555}
-    .out{white-space:pre-wrap;background:#fff;padding:10px;border:1px solid #eee;border-radius:10px}
+  </script>
+  <style>
+    :root{--primary:#1e3a8a;--secondary:#3b82f6;--accent:#f59e0b}
+    body{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Ubuntu,sans-serif}
+    .card{background:#fff;border-radius:14px;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+    .out{min-height:180px;overflow-x:auto;scrollbar-width:thin}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-    .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
-    label{display:inline-flex;gap:8px;align-items:center}
-    .badge{display:inline-block;background:var(--accent2);color:#000;padding:2px 8px;border-radius:999px;font-size:.8rem}
+    .btn{transition:all .2s ease-in-out}
+    .btn:not(:disabled){border:1px solid var(--secondary);color:var(--secondary)}
+    .btn:hover:not(:disabled){background-color:var(--secondary);color:#fff;box-shadow:0 6px 14px rgba(59,130,246,.25)}
+    input[type="checkbox"],input[type="radio"]{accent-color:var(--primary)}
+    .highlight-simple{border:2px solid #3b82f6;box-shadow:0 12px 20px rgba(59,130,246,.18)}
+    .highlight-libras{border:2px solid #1e3a8a;box-shadow:0 12px 20px rgba(30,58,138,.18)}
   </style>
 </head>
-<body>
-  <h1>Português Acessível para Surdos</h1>
-  <p class="small">Escolha o modo. Para textos de opinião e feedback, use Simplificado leve. Para aproximação da lógica da Libras, use Estilo Libras. <span class="badge">Nova regra: dicionário agressivo em Libras</span></p>
+<body class="bg-background text-textdark min-h-screen">
+  <div class="max-w-5xl mx-auto p-4 md:p-6">
+    <header class="mb-6 text-center">
+      <h1 class="text-3xl font-extrabold text-primary">Português Acessível</h1>
+      <p class="text-textlight mt-1">Simplificação e reestruturação de textos no Estilo Libras.</p>
+      <span class="inline-block mt-3 px-3 py-1 bg-accent text-textdark text-xs font-semibold rounded-full shadow">Dicionário agressivo • Remoção de clíticos segura</span>
+    </header>
 
-  <div class="grid">
-    <div class="card">
-      <h3>Entrada</h3>
-      <textarea id="input" placeholder="Cole seu texto aqui..."></textarea>
+    <div id="notification" style="display:none" class="fixed bottom-5 left-1/2 -translate-x-1/2 px-5 py-3 rounded-lg text-sm font-medium z-50 shadow-xl"></div>
 
-      <div class="row" style="margin:8px 0">
-        <label><input type="radio" name="mode" value="simple" checked> Simplificado leve</label>
-        <label><input type="radio" name="mode" value="libras"> Estilo Libras</label>
+    <div class="grid lg:grid-cols-2 gap-6 mb-6">
+      <!-- Entrada -->
+      <div class="card p-5 ring-1 ring-gray-100">
+        <h3 class="text-xl font-semibold mb-3">1. Texto de entrada</h3>
+        <textarea id="input" placeholder="Cole ou digite seu texto aqui..." class="w-full min-h-[200px] p-3 border border-gray-200 rounded-lg focus:ring-primary focus:border-primary"></textarea>
+        <div class="flex gap-3 mt-4">
+          <button onclick="fillSample()" class="btn flex-1 bg-white rounded-lg">Exemplo</button>
+          <button onclick="clearAll()" class="btn flex-1 bg-white rounded-lg">Limpar</button>
+          <button onclick="runTransform()" id="processButton" class="flex-1 bg-primary text-white font-bold rounded-lg shadow hover:bg-secondary border-none">Gerar</button>
+        </div>
       </div>
 
-      <div class="row" style="margin:8px 0">
-        <label class="small"><input type="checkbox" id="strictOrder" checked> Tempo no início quando houver</label>
-        <label class="small"><input type="checkbox" id="reduceVerbs"> Reduzir verbos (avançado)</label>
-        <label class="small"><input type="checkbox" id="useWhitelist" checked> Respeitar lista de exceções</label>
-      </div>
-
-      <div class="toolbar">
-        <button onclick="fillSample()">Exemplo</button>
-        <button onclick="clearAll()">Limpar</button>
-        <button onclick="process()">Gerar</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <h3>Lista de exceções</h3>
-      <p class="small">Palavras que não devem ser alteradas. Uma por linha. Edite à vontade.</p>
-      <textarea id="whitelistBox">discipulado
+      <!-- Config -->
+      <div class="card p-5 ring-1 ring-gray-100">
+        <h3 class="text-xl font-semibold mb-3">2. Configurações</h3>
+        <div class="space-y-5">
+          <div>
+            <p class="text-sm font-medium mb-2">Modo de destaque</p>
+            <div class="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+              <label class="inline-flex items-center cursor-pointer"><input type="radio" name="mode" value="simple" checked class="h-4 w-4" onchange="updateModeDisplay()"><span class="ml-2">Simplificado Leve</span></label>
+              <label class="inline-flex items-center cursor-pointer"><input type="radio" name="mode" value="libras" class="h-4 w-4" onchange="updateModeDisplay()"><span class="ml-2">Estilo Libras</span></label>
+            </div>
+          </div>
+          <div>
+            <p class="text-sm font-medium mb-2">Opções do Estilo Libras</p>
+            <div class="grid grid-cols-2 gap-2 text-sm text-textlight">
+              <label class="inline-flex items-center cursor-pointer"><input type="checkbox" id="strictOrder" checked class="h-4 w-4 rounded"><span class="ml-2">Tempo no início</span></label>
+              <label class="inline-flex items-center cursor-pointer"><input type="checkbox" id="reduceVerbs" class="h-4 w-4 rounded"><span class="ml-2">Converter para infinitivo</span></label>
+              <label class="inline-flex items-center cursor-pointer"><input type="checkbox" id="useWhitelist" checked class="h-4 w-4 rounded"><span class="ml-2">Respeitar exceções</span></label>
+            </div>
+          </div>
+          <div>
+            <p class="text-sm font-medium mb-2">Lista de exceções (uma por linha)</p>
+            <textarea id="whitelistBox" class="w-full min-h-[120px] p-3 border border-gray-200 rounded-lg focus:ring-primary focus:border-primary text-sm">discipulado
 família
 famílias
 comunidade
@@ -67,71 +102,131 @@ Salmo
 Salmos
 Libras
 Português
-Bíblia</textarea>
-      <div class="toolbar">
-        <button onclick="loadWhitelist()">Aplicar exceções</button>
+Bíblia
+firme
+registrar
+compartilhar
+documente
+forte</textarea>
+          </div>
+          <button onclick="loadWhitelist()" class="w-full py-2 bg-accent text-textdark font-medium rounded-lg">Aplicar exceções</button>
+        </div>
       </div>
-    </div>
-  </div>
-
-  <div class="grid" style="margin-top:16px">
-    <div class="card">
-      <h3>Versão simplificada</h3>
-      <div class="toolbar">
-        <button onclick="copyOut('#outSimple', this)">Copiar</button>
-      </div>
-      <div id="outSimple" class="out"></div>
     </div>
 
-    <div class="card">
-      <h3>Versão estilo Libras</h3>
-      <div class="toolbar">
-        <button onclick="copyOut('#outLibras', this)">Copiar</button>
+    <!-- Saídas -->
+    <div class="grid lg:grid-cols-2 gap-6" id="outputContainer">
+      <div id="cardSimple" class="card p-5 ring-1 ring-gray-100">
+        <div class="flex justify-between items-center mb-2">
+          <h3 class="text-xl font-semibold text-secondary">Versão Simplificada</h3>
+          <button onclick="copyOut('#outSimple', this)" class="btn text-sm px-3 py-1 bg-white rounded-lg">Copiar</button>
+        </div>
+        <pre id="outSimple" class="out bg-gray-50 text-textdark p-3 rounded-lg border border-gray-200 text-sm"></pre>
       </div>
-      <div id="outLibras" class="out mono"></div>
-      <p class="small">Regras: dicionário agressivo, remoção de ligações, infinitivo, pausas com vírgula, linhas curtas.</p>
+
+      <div id="cardLibras" class="card p-5 ring-1 ring-gray-100">
+        <div class="flex justify-between items-center mb-2">
+          <h3 class="text-xl font-semibold text-primary">Versão Estilo Libras</h3>
+          <button onclick="copyOut('#outLibras', this)" class="btn text-sm px-3 py-1 bg-white rounded-lg">Copiar</button>
+        </div>
+        <pre id="outLibras" class="out mono bg-gray-50 text-textdark p-3 rounded-lg border border-gray-200 text-base font-bold"></pre>
+      </div>
     </div>
+
+    <div class="mt-8 text-center text-xs text-textlight">v2.1 UI • clíticos seguros • infinitivo conservador • testes embutidos</div>
   </div>
 
 <script>
-/* ===== Config ===== */
 let WHITELIST = new Set();
+let notificationTimer;
+
+function showNotification(message, colorKey='secondary', duration=2600){
+  const notif = document.getElementById('notification');
+  notif.textContent = message;
+  const colors = tailwind.config.theme.extend.colors;
+  notif.style.backgroundColor = colors[colorKey] || '#3b82f6';
+  notif.style.color = colorKey === 'accent' ? '#1f2937' : '#fff';
+  notif.style.display = 'block';
+  clearTimeout(notificationTimer);
+  notificationTimer = setTimeout(()=> notif.style.display='none', duration);
+}
 function loadWhitelist(){
   const lines = document.getElementById('whitelistBox').value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
   WHITELIST = new Set(lines.map(x=> x.toLowerCase()));
+  showNotification('Exceções aplicadas','accent');
 }
-loadWhitelist();
+function updateModeDisplay(){
+  const selected = document.querySelector('input[name="mode"]:checked').value;
+  const cardS = document.getElementById('cardSimple');
+  const cardL = document.getElementById('cardLibras');
+  cardS.classList.toggle('highlight-simple', selected==='simple');
+  cardL.classList.toggle('highlight-libras', selected==='libras');
+}
 
-/* ===== Normalização leve ===== */
 function normalizeCommon(t){
   return t
-    .replace(/\btô\b/gi, "estou")
-    .replace(/\btá\b/gi, "está")
-    .replace(/\bpra\b/gi, "para")
-    .replace(/\bpro\b/gi, "para o")
-    .replace(/\bcê\b/gi, "você")
-    .replace(/\bvc\b/gi, "você")
-    .replace(/\bq\b/gi, "que");
+    .replace(/\s+/g,' ')
+    .replace(/\btô\b/gi,'estou')
+    .replace(/\btá\b/gi,'está')
+    .replace(/\bpra\b/gi,'para')
+    .replace(/\bpro\b/gi,'para o')
+    .replace(/\bcê\b/gi,'você')
+    .replace(/\bvc\b/gi,'você')
+    .replace(/\bq\b/gi,'que');
 }
 
-/* ===== Regras ===== */
-const TEMP_MARKERS = ["hoje","amanhã","ontem","agora","depois","antes","cedo","tarde","noite",
-  "segunda","terça","quarta","quinta","sexta","sábado","domingo",
-  "janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+const TEMP_MARKERS=["hoje","amanhã","ontem","agora","depois","antes","cedo","tarde","noite","segunda","terça","quarta","quinta","sexta","sábado","domingo","janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+const FILLERS=["realmente","basicamente","literalmente","provavelmente","talvez","certamente","claramente","apenas","somente","inclusive"];
+const SIMPLE_REPLACE=new Map(Object.entries({"todavia":"mas","entretanto":"mas","porém":"mas","consequentemente":"por isso","posteriormente":"depois","anteriormente":"antes"}));
 
-const FILLERS = ["realmente","basicamente","literalmente","provavelmente","talvez","certamente","claramente","apenas","somente","inclusive"];
-const SIMPLE_REPLACE = new Map(Object.entries({
-  "todavia":"mas","entretanto":"mas","porém":"mas",
-  "consequentemente":"por isso","posteriormente":"depois","anteriormente":"antes"
-}));
+// ---------- Remoção de clíticos segura ----------
+function removeClitics(text){
+  let t = text;
+  // 1) hifenizados: manter-se, lembrar-se
+  t = t.replace(/(\p{L}+?)-(se|me|te|nos|vos|lhe|lhes)\b/giu, '$1');
+  // 2) clítico solto antes de verbo no infinitivo
+  t = t.replace(/\b(se|me|te|nos|vos|lhe|lhes)\b\s+(?=\p{L}+?(?:ar|er|ir)\b)/giu, '');
+  // 3) clítico solto isolado (token sozinho)
+  t = t.replace(/\b(se|me|te|nos|vos|lhe|lhes)\b/giu, '');
+  return t.replace(/\s{2,}/g,' ').trim();
+}
 
-// Dicionário de Substituições Agressivo (multi-palavra primeiro)
+// ---------- Redução para infinitivo (conservadora) ----------
+function reduceVerbSafely(word){
+  const w = word.toLowerCase();
+  if(WHITELIST.has(w)) return word;
+  if(w.length < 4) return word;
+  if(/[^a-záéíóúâêôãõç]/i.test(w)) return word;
+
+  // Gerúndio: ando/endo/indo → ar/er/ir
+  if(/ando$/i.test(w)) return word.replace(/ando$/i,'ar');
+  if(/endo$/i.test(w)) return word.replace(/endo$/i,'er');
+  if(/indo$/i.test(w)) return word.replace(/indo$/i,'ir');
+
+  // Particípio regular: ado/idos → ar/ir
+  if(/ados?$/i.test(w)) return word.replace(/ados?$/i,'ar');
+  if(/idos?$/i.test(w)) return word.replace(/idos?$/i,'ir');
+
+  // Infinitivo pessoal / futuro do subjuntivo: arem/erem/irem
+  if(/arem$/i.test(w)) return word.replace(/arem$/i,'ar');
+  if(/erem$/i.test(w)) return word.replace(/erem$/i,'er');
+  if(/irem$/i.test(w)) return word.replace(/irem$/i,'ir');
+
+  // Futuro simples plural: arão/erão/irão
+  if(/arão$/i.test(w)) return word.replace(/arão$/i,'ar');
+  if(/erão$/i.test(w)) return word.replace(/erão$/i,'er');
+  if(/irão$/i.test(w)) return word.replace(/irão$/i,'ir');
+
+  return word;
+}
+
+// ---------- Dicionário agressivo ----------
+function escapeRegExp(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 const AGGR_MAP = [
   ["prática educacional","jeito de ensinar"],
   ["voz de apoio","pessoa que ajuda"],
   ["comunicação","conversa"],
   ["conectar-se","juntar"],
-  ["conectar","conectar"], // fallback simples
   ["desenvolver","crescer"],
   ["aprimorar","melhorar"],
   ["aperfeiçoar","melhorar"],
@@ -148,230 +243,169 @@ const AGGR_MAP = [
   ["documentar","registrar"],
   ["celebrar","comemorar"],
   ["manter-se firme","ficar firme"],
+  ["manter firme","ficar firme"],
+  ["mantenha-se firme","ficar firme"],
+  ["mantenha firme","ficar firme"],
   ["dúvidas","perguntas"],
-  ["enfrentou","passou"],
-  ["conectar-se","juntar"]
-].sort((a,b)=> b[0].length - a[0].length); // maior primeiro
-
-// Ligações a remover agressivamente em Libras
-const LINKERS = new Set([
-  "de","do","da","dos","das",
-  "em","no","na","nos","nas",
-  "para","pra","por","com","sem","sobre","até","desde","entre","a","ao","à","aos","às",
-  "e","mas","ou","que","porque","pois"
-]);
-
-// redução de verbos (opcional, segura)
-function reduceVerbSafely(word){
-  const w = word.toLowerCase();
-  if (WHITELIST.has(w)) return word;
-  if (w.length < 7) return word;
-  if (/[^a-záéíóúâêôãõç]/i.test(w)) return word;
-  const rules = [
-    [/(.+?)(amos|emos|imos)\b/i, "$1r"],
-    [/(.+?)(rei|rás|rá|remos|reis|rão)\b/i,"$1r"],
-    [/(.+?)(ava|ia|avam|iam)\b/i,"$1r"],
-    [/(.+?)(ei|ou|eu|ram)\b/i,"$1r"],
-  ];
-  let out = word;
-  for (const [re, rep] of rules){
-    if (re.test(out)) {
-      const cand = out.replace(re, rep);
-      if (/(ar|er|ir)\b/i.test(cand) && cand.length >= 6) out = cand;
-      break;
-    }
-  }
-  return out;
-}
-
-/* ===== Pipeline ===== */
-function splitSentences(t){
-  return t
-    .replace(/\s+/g," ")
-    .split(/(?<=[\.\!\?\;])\s+|,\s+(?=[A-ZÁÉÍÓÚÃÕÂÊÔ0-9])/g)
-    .map(s=>s.trim())
-    .filter(Boolean);
-}
-
-function simplifySentence(s){
-  let out = " " + s + " ";
-  SIMPLE_REPLACE.forEach((to,from)=>{
-    out = out.replace(new RegExp("\\b"+from+"\\b","gi"), to);
-  });
-  FILLERS.forEach(w=>{
-    out = out.replace(new RegExp("\\b"+w+"\\b","gi"), " ");
-  });
-  out = out.replace(/\s+/g," ").trim();
-  return out;
-}
-
-// aplica dicionário agressivo antes do estilo Libras
+  ["enfrentou","passou"]
+].sort((a,b)=> b[0].length - a[0].length);
 function aggressiveSubstitutions(text){
-  let t = " " + text + " ";
-  for (const [from,to] of AGGR_MAP){
-    const re = new RegExp("(\\b)"+from.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+"(\\b)","gi");
+  let t = ' ' + text + ' ';
+  for(const [from,to] of AGGR_MAP){
+    if(WHITELIST.has(from.toLowerCase())) continue;
+    const re = new RegExp('(\\b)'+escapeRegExp(from)+'(\\b)','gi');
     t = t.replace(re, `$1${to}$2`);
   }
   return t.trim();
 }
 
-function toLibrasStyleLine(s, opts){
-  const { strictOrder=true, reduce=false } = opts;
+const LINKERS=new Set(["de","do","da","dos","das","dum","duma","em","no","na","nos","nas","para","pra","por","com","sem","sobre","até","desde","entre","a","ao","à","aos","às","e","mas","ou","que","porque","pois","pelo","pela","pelos","pelas","o","a","os","as","um","uma","uns","umas","meu","minha","meus","minhas","seu","sua","seus","suas","nosso","nossa","nossos","nossas","teu","tua","teus","tuas","dele","dela","deles","delas"]);
 
-  // 0) dicionário agressivo
+function splitSentences(t){
+  return t.replace(/\s+/g,' ').split(/(?<=[\.!?;])\s+|,\s+(?=[A-ZÁÉÍÓÚÃÕÂÊÔ0-9])/g).map(s=>s.trim()).filter(Boolean);
+}
+
+function simplifySentence(s){
+  let out=' '+s+' ';
+  SIMPLE_REPLACE.forEach((to,from)=>{ out=out.replace(new RegExp('(\\b)'+from+'(\\b)','gi'),`$1${to}$2`); });
+  FILLERS.forEach(w=>{ out=out.replace(new RegExp('(\\b)'+w+'(\\b)','gi'),' '); });
+  out=out.replace(/\s+/g,' ').trim();
+  if(out.length>0){ out=out.charAt(0).toUpperCase()+out.slice(1); if(!/[\.\?\!]$/.test(out)) out+='.'; }
+  return out;
+}
+
+// ---------- Pipeline Libras ----------
+function toLibrasStyleLine(s, opts){
+  const { strictOrder=true, reduce=false, useWhitelist=true } = opts;
+
+  // Corrige artefatos de hífen antes do pipeline
+  s = s.replace(/(\w+)-(com|se|lhe|me|te|nos|vos)\b/gi,'$1 $2').replace(/(\w+)-(firme)\b/gi,'$1 $2');
+
+  s = removeClitics(s);
+
+  // Reduz primeiro (antes do dicionário) para permitir substituições depois
+  if(reduce){
+    s = s.split(/\s+/).map(reduceVerbSafely).join(' ');
+  }
+
+  // Substituições agressivas após a redução
   s = aggressiveSubstitutions(s);
 
-  // 1) limpar aspas/parênteses leves
-  let x = s.replace(/[\"\“\”\'\(\)]+/g," ");
-
-  // 2) remover pontuação intermediária
-  x = x.replace(/[\,\;\:]+/g," ");
-
-  // 3) tokenizar
+  let x = s.replace(/["“”'()\[\]]+/g,' ').replace(/[\.\!\?]$/,'').trim().replace(/[\,\;\:]+/g,' ');
   let tokens = x.split(/\s+/).filter(Boolean);
 
-  // 4) remoção agressiva de ligações, respeitando whitelist
+  // Remoção agressiva de ligações e fillers
   tokens = tokens.filter(t=>{
-    const low = t.toLowerCase();
-    if (WHITELIST.has(low)) return true;
-    if (LINKERS.has(low)) return false;
-    return true;
+    const low=t.toLowerCase();
+    if(useWhitelist && WHITELIST.has(low)) return true;
+    if(t.includes('-')) return true;
+    return !LINKERS.has(low) && !FILLERS.includes(low);
   });
 
-  // 5) normalizar infinitivo com redução opcional
-  tokens = tokens.map(t=>{
-    const low = t.toLowerCase();
-    if (WHITELIST.has(low)) return t;
-    if (reduce && !/[A-Z]{2,}/.test(t)) return reduceVerbSafely(t);
-    return t;
-  });
+  if(/\bquando\b/i.test(s)) tokens.unshift('FUTURO');
 
-  // 6) marcador FUTURO quando houver "quando" na sentença original
-  const hasQuando = /\bquando\b/i.test(s);
-  if (hasQuando) tokens.unshift("FUTURO");
+  // Tempo no início
+  const tempo=[], resto=[];
+  if(strictOrder){ tokens.forEach(t=> (TEMP_MARKERS.includes(t.toLowerCase())? tempo : resto).push(t)); }
+  else { resto.push(...tokens); }
 
-  // 7) tempo no início
-  const tempo = [], resto = [];
-  tokens.forEach(t=>{
-    if (TEMP_MARKERS.includes(t.toLowerCase())) tempo.push(t.toUpperCase());
-    else resto.push(t);
-  });
-  let ordered = (strictOrder && (tempo.length)) ? [...tempo, ...resto] : tokens;
+  const ordered = (strictOrder && tempo.length) ? [...tempo, ...resto] : tokens;
 
-  // 8) caixa alta
-  let upper = ordered.join(" ").replace(/\s+/g," ").trim().toUpperCase();
+  const upper = ordered.join(' ').replace(/\s+/g,' ').trim().toUpperCase();
+  const MAX=10;
+  const words=upper.split(' ');
+  const lines=[];
+  for(let i=0;i<words.length;i+=MAX) lines.push(words.slice(i,i+MAX).join(' '));
 
-  // 9) pausas e linhas curtas: quebre por excesso de palavras em ~12–15
-  const MAX = 14;
-  const words = upper.split(" ");
-  const lines = [];
-  let buf = [];
-  for (const w of words){
-    buf.push(w);
-    if (buf.length >= MAX){
-      lines.push(buf.join(" "));
-      buf = [];
-    }
+  if(lines.length){
+    const last=lines[lines.length-1];
+    if(!/[\.\?\!]$/.test(last)) lines[lines.length-1]=last+'.';
   }
-  if (buf.length) lines.push(buf.join(" "));
-
-  // 10) refinamento de pausas: inserir vírgula entre blocos de ações simples
-  const withPauses = lines.map(line=>{
-    // heurística: se houver 3 ou mais verbos no infinitivo (terminando em AR/ER/IR), inserir vírgulas entre grupos
-    const parts = line.split(" ");
-    let out = [];
-    let verbsSeen = 0;
-    for (let i=0;i<parts.length;i++){
-      const p = parts[i];
-      out.push(p);
-      if (/(AR|ER|IR)$/.test(p)) {
-        verbsSeen++;
-        if (verbsSeen>=1) out.push(",");
-      }
-    }
-    // limpar vírgula final
-    let txt = out.join(" ").replace(/\s+,/g,",").replace(/,\s*$/,"");
-    return txt;
-  });
-
-  // 11) retornar uma ou mais linhas
-  return withPauses;
+  return lines;
 }
 
-/* ===== UI ===== */
-function process(){
-  const raw = document.getElementById('input').value.trim();
-  const outSimple = document.getElementById('outSimple');
-  const outLibras = document.getElementById('outLibras');
-  if(!raw){ outSimple.textContent=""; outLibras.textContent=""; return; }
+// ---------- UI ----------
+function runTransform(){
+  const btn=document.getElementById('processButton');
+  btn.textContent='Processando...'; btn.disabled=true;
 
-  const mode = document.querySelector('input[name="mode"]:checked').value;
-  const strictOrder = document.getElementById('strictOrder').checked;
-  const reduce = document.getElementById('reduceVerbs').checked;
+  const raw=document.getElementById('input').value.trim();
+  const outS=document.getElementById('outSimple');
+  const outL=document.getElementById('outLibras');
 
-  const normalized = normalizeCommon(raw);
-  const sentences = splitSentences(normalized);
+  if(!raw){ outS.textContent=''; outL.textContent=''; showNotification('Insira um texto.','accent',1600); btn.textContent='Gerar'; btn.disabled=false; return; }
 
-  // Simplificado leve
-  const simpleLines = sentences.map(simplifySentence);
-  outSimple.textContent = "• " + simpleLines.join("\n• ");
+  const strictOrder=document.getElementById('strictOrder').checked;
+  const reduce=document.getElementById('reduceVerbs').checked;
+  const useWhitelist=document.getElementById('useWhitelist').checked;
 
-  // Estilo Libras
-  const librasAll = [];
-  sentences.forEach(s=>{
-    const ls = toLibrasStyleLine(s, {strictOrder, reduce});
-    ls.forEach(line=> librasAll.push("• " + line));
-  });
-  outLibras.textContent = librasAll.join("\n");
+  try{
+    const norm=normalizeCommon(raw);
+    const sentences=splitSentences(norm);
 
-  // rolar um pouco para as saídas no mobile
-  outSimple.scrollIntoView({behavior:"smooth", block:"start"});
-}
+    const simpleLines=sentences.map(simplifySentence);
+    outS.textContent='• '+simpleLines.join('\n• ');
 
-function fillSample(){
-  // Casos de teste atualizados como fonte da verdade
-  const exemplo = [
-"Continue aprendendo, conectando-se com outras famílias e aprimorando sua prática educacional.",
-"Quando outras mães passarem pelas mesmas dúvidas que você enfrentou, seja a voz de apoio e encorajamento que gostaria de ter ouvido.",
-"Documente a jornada de seus filhos, celebre as conquistas e mantenha-se firme em sua convicção."
-  ].join(" ");
-  document.getElementById('input').value = exemplo;
-  process();
-}
+    const librasAll=[];
+    sentences.forEach(s=>{
+      const segs=toLibrasStyleLine(s,{strictOrder,reduce,useWhitelist});
+      if(segs.length){ librasAll.push('• '+segs.join('\n')); }
+    });
+    outL.textContent=librasAll.join('\n\n');
 
-function clearAll(){
-  document.getElementById('input').value = "";
-  document.getElementById('outSimple').textContent = "";
-  document.getElementById('outLibras').textContent = "";
-}
-
-function copyOut(selector, btn){
-  const el = document.querySelector(selector);
-  const text = el.textContent;
-  if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(text).then(()=> flash(btn,"Copiado")).catch(()=> legacyCopy(text,btn));
-  } else {
-    legacyCopy(text, btn);
+    updateModeDisplay();
+    showNotification('Texto gerado com sucesso!','secondary');
+  }catch(e){
+    console.error(e);
+    outS.textContent='Erro de processamento.';
+    outL.textContent='ERRO: Verifique a pontuação ou tente um texto menor.';
+    showNotification('Ocorreu um erro.','accent');
+  }finally{
+    setTimeout(()=>{ btn.textContent='Gerar'; btn.disabled=false; },160);
   }
 }
-function legacyCopy(text, btn){
-  const ta = document.createElement('textarea');
-  ta.value = text;
-  ta.style.position = 'fixed';
-  ta.style.opacity = '0';
-  document.body.appendChild(ta);
-  ta.focus();
-  ta.select();
-  try{ document.execCommand('copy'); flash(btn,"Copiado"); }
-  catch(e){ flash(btn,"Selecione e copie"); }
-  document.body.removeChild(ta);
+
+const originalSample = "Continue aprendendo, conectando-se com outras famílias e aprimorando sua prática educacional. Quando outras mães passarem pelas mesmas dúvidas que você enfrentou, seja a voz de apoio e encorajamento que gostaria de ter ouvido. Documente a jornada de seus filhos, celebre as conquistas e mantenha-se firme em sua convicção. Compartilhe sua vivência, ofereça ajuda e contribua para que a nossa comunidade possa ficar mais forte.";
+function fillSample(){ document.getElementById('input').value=originalSample; showNotification('Exemplo carregado','accent'); }
+function clearAll(){ document.getElementById('input').value=''; document.getElementById('outSimple').textContent=''; document.getElementById('outLibras').textContent=''; document.getElementById('cardSimple').classList.remove('highlight-simple'); document.getElementById('cardLibras').classList.remove('highlight-libras'); showNotification('Campos limpos','accent',1400); }
+function copyOut(sel,btn){ const el=document.querySelector(sel); const t=el.textContent; if(!t.trim()) return flash(btn,'Vazio!'); if(navigator.clipboard&&window.isSecureContext){ navigator.clipboard.writeText(t).then(()=>flash(btn,'Copiado')).catch(()=>legacyCopy(t,btn)); } else { legacyCopy(t,btn);} }
+function legacyCopy(t,btn){ const ta=document.createElement('textarea'); ta.value=t; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.focus(); ta.select(); try{ document.execCommand('copy'); flash(btn,'Copiado'); }catch(e){ flash(btn,'Erro'); } document.body.removeChild(ta);} 
+function flash(btn,msg){ const old=btn.textContent; btn.disabled=true; btn.textContent=msg; setTimeout(()=>{ btn.textContent=old; btn.disabled=false; },1000);} 
+
+// ---------- Testes embutidos ----------
+window.runSelfTests = function(){
+  const CASES = [
+    {in:'Ele precisa lembrar-se da promessa.', out:'• ELE PRECISAR LEMBRAR PROMESSA.'},
+    {in:'Devemos manter-se firmes na fé.', out:'• NÓS PRECISAR FICAR FIRME FÉ.'},
+    {in:'Ele vai se levantar cedo.', out:'• ELE FUTURO LEVANTAR CEDO.'},
+    {in:'Você deve me ajudar agora.', out:'• VOCÊ PRECISAR AJUDAR AGORA.'},
+    {in:'Eu vou à escola para aprender e crescer.', out:'• EU IR ESCOLA APRENDER CRESCER.'},
+    {in:'Devemos aprimorando nossa prática educacional.', out:'• NÓS PRECISAR MELHORAR JEITO ENSINAR.'},
+    {in:'Quando outras mães passarem pelas mesmas dúvidas que você enfrentou, seja a voz de apoio e encorajamento que gostaria de ter ouvido.', out:'• FUTURO OUTRAS MÃES TER PERGUNTAS IGUAIS VOCÊ PASSOU.\\n• VOCÊ SER PESSOA QUE AJUDA DAR ÂNIMO IGUAL VOCÊ QUERIA ANTES.'},
+    {in:'Documente a jornada de seus filhos, celebre as conquistas e mantenha-se firme em sua convicção.', out:'• VOCÊ REGISTRAR HISTÓRIA SEUS FILHOS COMEMORAR VITÓRIAS FICAR FIRME SUA CERTEZA.'}
+  ];
+  const strictOrder=true, reduce=true, useWhitelist=true;
+  function runOne(input){
+    const sentences = splitSentences(normalizeCommon(input));
+    const lines=[]; sentences.forEach(s=> toLibrasStyleLine(s,{strictOrder,reduce,useWhitelist}).forEach(L=>lines.push('• '+L)) );
+    return lines.join('\\n');
+  }
+  const norm = s=> s.replace(/^•\\s*/gm,'').replace(/\\s+/g,' ').replace(/\\s,\\s/g,', ').replace(/\\s\\./g,'.').trim();
+  let pass=0; const details=[];
+  CASES.forEach(c=>{ const got=runOne(c.in); const ok = norm(got)===norm(c.out); if(ok) pass++; details.push({input:c.in, expected:c.out, got, ok}); });
+  console.table(details);
+  alert(`${pass}/${CASES.length} testes passaram. Veja o console para detalhes.`);
+  return details;
 }
-function flash(btn, msg){
-  const old = btn.textContent;
-  btn.textContent = msg;
-  setTimeout(()=> btn.textContent = old, 1200);
+
+window.onload = function(){ fillSample(); loadWhitelist(); updateModeDisplay(); };
+</script>
+
+<!-- Service Worker registration -->
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{ navigator.serviceWorker.register('./sw.js').catch(console.error); });
 }
 </script>
 </body>
 </html>
-
