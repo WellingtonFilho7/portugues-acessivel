@@ -182,12 +182,9 @@ const SIMPLE_REPLACE=new Map(Object.entries({"todavia":"mas","entretanto":"mas",
 // ---------- Remoção de clíticos segura ----------
 function removeClitics(text){
   let t = text;
-  // 1) hifenizados: manter-se, lembrar-se
-  t = t.replace(/(\p{L}+?)-(se|me|te|nos|vos|lhe|lhes)\b/giu, '$1');
-  // 2) clítico solto antes de verbo no infinitivo
-  t = t.replace(/\b(se|me|te|nos|vos|lhe|lhes)\b\s+(?=\p{L}+?(?:ar|er|ir)\b)/giu, '');
-  // 3) clítico solto isolado (token sozinho)
-  t = t.replace(/\b(se|me|te|nos|vos|lhe|lhes)\b/giu, '');
+  t = t.replace(/(\p{L}+?)-(se|me|te|nos|vos|lhe|lhes)\b/giu, '$1');               // hifenizados
+  t = t.replace(/\b(se|me|te|nos|vos|lhe|lhes)\b\s+(?=\p{L}+?(?:ar|er|ir)\b)/giu,''); // antes de infinitivo
+  t = t.replace(/\b(se|me|te|nos|vos|lhe|lhes)\b/giu, '');                           // isolados
   return t.replace(/\s{2,}/g,' ').trim();
 }
 
@@ -198,21 +195,21 @@ function reduceVerbSafely(word){
   if(w.length < 4) return word;
   if(/[^a-záéíóúâêôãõç]/i.test(w)) return word;
 
-  // Gerúndio: ando/endo/indo → ar/er/ir
+  // Gerúndio
   if(/ando$/i.test(w)) return word.replace(/ando$/i,'ar');
   if(/endo$/i.test(w)) return word.replace(/endo$/i,'er');
   if(/indo$/i.test(w)) return word.replace(/indo$/i,'ir');
 
-  // Particípio regular: ado/idos → ar/ir
+  // Particípio regular
   if(/ados?$/i.test(w)) return word.replace(/ados?$/i,'ar');
   if(/idos?$/i.test(w)) return word.replace(/idos?$/i,'ir');
 
-  // Infinitivo pessoal / futuro do subjuntivo: arem/erem/irem
+  // Infinitivo pessoal / futuro do subjuntivo
   if(/arem$/i.test(w)) return word.replace(/arem$/i,'ar');
   if(/erem$/i.test(w)) return word.replace(/erem$/i,'er');
   if(/irem$/i.test(w)) return word.replace(/irem$/i,'ir');
 
-  // Futuro simples plural: arão/erão/irão
+  // Futuro simples plural
   if(/arão$/i.test(w)) return word.replace(/arão$/i,'ar');
   if(/erão$/i.test(w)) return word.replace(/erão$/i,'er');
   if(/irão$/i.test(w)) return word.replace(/irão$/i,'ir');
@@ -278,23 +275,30 @@ function simplifySentence(s){
 function toLibrasStyleLine(s, opts){
   const { strictOrder=true, reduce=false, useWhitelist=true } = opts;
 
-  // Corrige artefatos de hífen antes do pipeline
-  s = s.replace(/(\w+)-(com|se|lhe|me|te|nos|vos)\b/gi,'$1 $2').replace(/(\w+)-(firme)\b/gi,'$1 $2');
+  // 1. Corrige artefatos de hífen
+  s = s.replace(/(\w+)-(com|se|lhe|me|te|nos|vos)\b/gi,'$1 $2')
+       .replace(/(\w+)-(firme)\b/gi,'$1 $2');
 
+  // 2. Remove clíticos antes de outras transformações
   s = removeClitics(s);
 
-  // Reduz primeiro (antes do dicionário) para permitir substituições depois
+  // 3. Reduz verbos (se a opção estiver ativada)
   if(reduce){
     s = s.split(/\s+/).map(reduceVerbSafely).join(' ');
   }
 
-  // Substituições agressivas após a redução
+  // 4. Aplica o dicionário agressivo (depois da redução)
   s = aggressiveSubstitutions(s);
 
-  let x = s.replace(/["“”'()\[\]]+/g,' ').replace(/[\.\!\?]$/,'').trim().replace(/[\,\;\:]+/g,' ');
+  // Limpeza leve
+  let x = s.replace(/["“”'()\[\]]+/g,' ')
+           .replace(/[.!?]$/,'')
+           .trim()
+           .replace(/[,;:]+/g,' ');
+
   let tokens = x.split(/\s+/).filter(Boolean);
 
-  // Remoção agressiva de ligações e fillers
+  // Remoção de ligações e fillers
   tokens = tokens.filter(t=>{
     const low=t.toLowerCase();
     if(useWhitelist && WHITELIST.has(low)) return true;
@@ -302,15 +306,17 @@ function toLibrasStyleLine(s, opts){
     return !LINKERS.has(low) && !FILLERS.includes(low);
   });
 
+  // Marcador temporal relativo
   if(/\bquando\b/i.test(s)) tokens.unshift('FUTURO');
 
   // Tempo no início
   const tempo=[], resto=[];
-  if(strictOrder){ tokens.forEach(t=> (TEMP_MARKERS.includes(t.toLowerCase())? tempo : resto).push(t)); }
+  if(strictOrder){ tokens.forEach(t => (TEMP_MARKERS.includes(t.toLowerCase()) ? tempo : resto).push(t)); }
   else { resto.push(...tokens); }
 
   const ordered = (strictOrder && tempo.length) ? [...tempo, ...resto] : tokens;
 
+  // Upper, quebra e ponto final
   const upper = ordered.join(' ').replace(/\s+/g,' ').trim().toUpperCase();
   const MAX=10;
   const words=upper.split(' ');
@@ -319,7 +325,7 @@ function toLibrasStyleLine(s, opts){
 
   if(lines.length){
     const last=lines[lines.length-1];
-    if(!/[\.\?\!]$/.test(last)) lines[lines.length-1]=last+'.';
+    if(!/[.!?]$/.test(last)) lines[lines.length-1]=last+'.';
   }
   return lines;
 }
