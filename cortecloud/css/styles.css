@@ -1,0 +1,209 @@
+/* CorteCloud Local - Custom Styles */
+
+:root {
+  --primary: #1e3a8a;
+  --primary-light: #2563eb;
+  --secondary: #3b82f6;
+  --accent: #f59e0b;
+}
+
+body {
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Cards */
+.cc-card {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  padding: 1.5rem;
+}
+
+.cc-card-hover:hover {
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+  transform: translateY(-2px);
+  transition: all 0.2s ease;
+}
+
+/* Buttons */
+.cc-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+  cursor: pointer;
+  border: none;
+}
+
+.cc-btn-primary {
+  background: var(--primary);
+  color: white;
+}
+.cc-btn-primary:hover {
+  background: var(--primary-light);
+  box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3);
+}
+
+.cc-btn-secondary {
+  background: white;
+  color: var(--primary);
+  border: 1px solid var(--secondary);
+}
+.cc-btn-secondary:hover {
+  background: var(--secondary);
+  color: white;
+}
+
+.cc-btn-accent {
+  background: var(--accent);
+  color: white;
+}
+.cc-btn-accent:hover {
+  background: #d97706;
+}
+
+.cc-btn-danger {
+  background: #ef4444;
+  color: white;
+}
+.cc-btn-danger:hover {
+  background: #dc2626;
+}
+
+.cc-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Inputs */
+.cc-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+.cc-input:focus {
+  border-color: var(--secondary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.cc-select {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  background: white;
+  cursor: pointer;
+  outline: none;
+}
+.cc-select:focus {
+  border-color: var(--secondary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+/* Checkbox custom */
+input[type="checkbox"] {
+  accent-color: var(--primary);
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+}
+
+/* Table */
+.cc-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.875rem;
+}
+.cc-table th {
+  background: #f1f5f9;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  color: #475569;
+  border-bottom: 2px solid #e2e8f0;
+}
+.cc-table td {
+  padding: 0.4rem 0.75rem;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+.cc-table tr:hover td {
+  background: #f8fafc;
+}
+
+/* Canvas container */
+.canvas-container {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  overflow: auto;
+  position: relative;
+}
+
+/* 3D viewer container */
+.viewer3d-container {
+  background: linear-gradient(135deg, #1e293b, #334155);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  position: relative;
+  min-height: 400px;
+}
+
+/* Edge banding indicators */
+.edge-top { border-top: 3px solid var(--accent) !important; }
+.edge-bottom { border-bottom: 3px solid var(--accent) !important; }
+.edge-left { border-left: 3px solid var(--accent) !important; }
+.edge-right { border-right: 3px solid var(--accent) !important; }
+
+/* Module card grid */
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fadeIn 0.3s ease forwards;
+}
+
+/* Stats badge */
+.stat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
