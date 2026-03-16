@@ -6,37 +6,42 @@ export function renderProjectsPage(container) {
   const projects = listProjects();
 
   container.innerHTML = `
-    <div class="animate-fade-in">
-      <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold text-gray-800">Projetos</h1>
-        <div class="flex gap-2">
-          <button id="btn-new-project" class="cc-btn cc-btn-primary">+ Novo Projeto</button>
-          <button id="btn-export" class="cc-btn cc-btn-secondary">Exportar Backup</button>
-          <label class="cc-btn cc-btn-secondary cursor-pointer">
-            Importar
-            <input type="file" id="btn-import" accept=".json" class="hidden">
-          </label>
-        </div>
+    <div class="animate-fade-in space-y-4">
+      <div class="flex items-center justify-between">
+        <h1 class="text-xl md:text-2xl font-bold text-gray-800">Projetos</h1>
+        <button id="btn-new-project" class="cc-btn cc-btn-primary cc-btn-sm md:cc-btn">+ Novo</button>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex gap-2">
+        <button id="btn-export" class="cc-btn cc-btn-secondary cc-btn-sm flex-1 md:flex-none">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          Exportar
+        </button>
+        <label class="cc-btn cc-btn-secondary cc-btn-sm flex-1 md:flex-none cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+          Importar
+          <input type="file" id="btn-import" accept=".json" class="hidden">
+        </label>
       </div>
 
       ${projects.length === 0 ? `
-        <div class="cc-card text-center py-16">
-          <div class="text-5xl mb-4 text-gray-300">&#128194;</div>
-          <p class="text-gray-400 text-lg">Nenhum projeto salvo ainda.</p>
-          <p class="text-gray-400 text-sm mt-2">Crie um novo projeto ou importe um backup.</p>
+        <div class="empty-state">
+          <div class="empty-state-icon">&#128194;</div>
+          <p class="text-base font-medium">Nenhum projeto salvo</p>
+          <p class="text-xs mt-1">Crie um projeto ou importe um backup.</p>
         </div>
       ` : `
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="space-y-3">
           ${projects.map(p => `
-            <div class="cc-card cc-card-hover transition-all">
-              <h3 class="font-bold text-lg text-gray-800 mb-1">${escapeHtml(p.name)}</h3>
-              <p class="text-sm text-gray-500 mb-3">${p.description || 'Sem descrição'}</p>
-              <div class="text-xs text-gray-400 mb-3">
-                Criado: ${formatDate(p.createdAt)} | Atualizado: ${formatDate(p.updatedAt)}
-              </div>
-              <div class="flex gap-2">
-                <button class="cc-btn cc-btn-secondary text-xs project-edit" data-id="${p.id}">Editar</button>
-                <button class="cc-btn cc-btn-danger text-xs project-delete" data-id="${p.id}">Excluir</button>
+            <div class="cc-card cc-card-hover">
+              <div class="flex items-start justify-between">
+                <div class="flex-1 min-w-0">
+                  <h3 class="font-bold text-gray-800 truncate">${escapeHtml(p.name)}</h3>
+                  <p class="text-xs text-gray-400 mt-0.5">${p.description || 'Sem descrição'}</p>
+                  <p class="text-[10px] text-gray-300 mt-1">Atualizado: ${formatDate(p.updatedAt)}</p>
+                </div>
+                <button class="cc-btn cc-btn-danger cc-btn-sm ml-3 project-delete" data-id="${p.id}">Excluir</button>
               </div>
             </div>
           `).join('')}
@@ -45,19 +50,10 @@ export function renderProjectsPage(container) {
     </div>
   `;
 
-  // Events
   document.getElementById('btn-new-project').addEventListener('click', () => {
     const name = prompt('Nome do projeto:');
     if (!name) return;
-    const project = {
-      id: generateId(),
-      name,
-      description: '',
-      pieces: [],
-      modules: [],
-      sheetConfig: null,
-    };
-    saveProject(project);
+    saveProject({ id: generateId(), name, description: '', pieces: [], modules: [], sheetConfig: null });
     showToast('Projeto criado!', 'success');
     renderProjectsPage(container);
   });
@@ -73,10 +69,10 @@ export function renderProjectsPage(container) {
     try {
       const text = await file.text();
       importData(text);
-      showToast('Dados importados com sucesso!', 'success');
+      showToast('Importado com sucesso!', 'success');
       renderProjectsPage(container);
     } catch (err) {
-      showToast('Erro ao importar: ' + err.message, 'error');
+      showToast('Erro: ' + err.message, 'error');
     }
   });
 
@@ -84,15 +80,9 @@ export function renderProjectsPage(container) {
     btn.addEventListener('click', () => {
       if (confirm('Excluir este projeto?')) {
         deleteProject(btn.dataset.id);
-        showToast('Projeto excluído', 'info');
+        showToast('Excluído', 'info');
         renderProjectsPage(container);
       }
-    });
-  });
-
-  container.querySelectorAll('.project-edit').forEach(btn => {
-    btn.addEventListener('click', () => {
-      showToast('Edição de projetos em breve!', 'info');
     });
   });
 }
