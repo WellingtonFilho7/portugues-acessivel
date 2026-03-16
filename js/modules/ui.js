@@ -1,5 +1,5 @@
 /**
- * UI da página de Módulos 3D
+ * UI de Módulos - Foco na lista de peças, 3D como complemento
  */
 
 import { ALL_MODULES, getModuleById } from './catalog.js';
@@ -11,11 +11,12 @@ let selectedModule = null;
 let currentParams = {};
 let generatedPieces = [];
 let viewerInitialized = false;
+let show3D = false;
 
 const ENV_ICONS = {
-  'Cozinha': '&#127858;',
+  'Cozinha': '&#127859;',
   'Dormitório': '&#128716;',
-  'Banheiro': '&#128704;',
+  'Banheiro': '&#128705;',
   'Lavanderia': '&#129530;',
 };
 
@@ -23,78 +24,97 @@ export function renderModulesPage(container) {
   destroyViewer();
   viewerInitialized = false;
   selectedModule = null;
+  show3D = false;
 
   container.innerHTML = `
-    <div class="animate-fade-in">
-      <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold text-gray-800">Módulos 3D de Móveis</h1>
+    <div class="animate-fade-in space-y-4">
+      <h1 class="text-xl md:text-2xl font-bold text-gray-800">Módulos de Móveis</h1>
+      <p class="text-sm text-gray-400 -mt-2">Escolha um módulo, ajuste as dimensões e envie as peças para o Plano de Corte.</p>
+
+      <!-- Module selection grid -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2" id="module-grid">
+        ${renderModuleGrid()}
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Catálogo de módulos -->
-        <div class="lg:col-span-1">
-          <div class="cc-card">
-            <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Catálogo</h2>
-            <div id="module-catalog" class="space-y-2">
-              ${renderCatalog()}
+      <!-- Selected module: params + pieces -->
+      <div id="module-detail" class="hidden space-y-4">
+
+        <!-- Module header -->
+        <div class="cc-card">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h2 class="text-lg font-bold text-gray-800" id="mod-title"></h2>
+              <p class="text-xs text-gray-400" id="mod-desc"></p>
             </div>
+            <button id="btn-back-modules" class="cc-btn cc-btn-ghost cc-btn-sm">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+              Voltar
+            </button>
+          </div>
+
+          <!-- Params -->
+          <div class="section-title">Dimensões</div>
+          <div id="params-form" class="grid grid-cols-2 md:grid-cols-3 gap-3"></div>
+        </div>
+
+        <!-- 3D viewer (optional toggle) -->
+        <div class="cc-card">
+          <div class="flex items-center justify-between mb-2">
+            <div class="section-title mb-0">Visualização 3D</div>
+            <button id="btn-toggle-3d" class="cc-btn cc-btn-secondary cc-btn-sm">Ativar 3D</button>
+          </div>
+          <div id="viewer3d-wrap" class="hidden">
+            <div id="viewer3d" class="viewer3d-container" style="height:300px;">
+              <div class="flex items-center justify-center h-full text-gray-400 text-sm">
+                Carregando...
+              </div>
+            </div>
+            <p class="text-[10px] text-gray-400 mt-2 text-center">Arraste para girar. Pinça para zoom.</p>
+          </div>
+          <div id="viewer3d-off" class="py-6 text-center text-gray-300 text-sm">
+            A visualização 3D é um complemento. As peças abaixo são o que importa para o corte.
           </div>
         </div>
 
-        <!-- Área principal: 3D + Parâmetros + Peças -->
-        <div class="lg:col-span-2 space-y-4">
-          <!-- Viewer 3D -->
-          <div class="cc-card">
-            <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3" id="viewer-title">
-              Selecione um módulo
-            </h2>
-            <div id="viewer3d" class="viewer3d-container" style="height: 420px;">
-              <div class="flex items-center justify-center h-full text-gray-400 text-lg">
-                Selecione um módulo para visualizar em 3D
-              </div>
-            </div>
+        <!-- Generated pieces list -->
+        <div class="cc-card">
+          <div class="flex items-center justify-between mb-3">
+            <div class="section-title mb-0">Peças Geradas (<span id="pieces-count">0</span> itens)</div>
           </div>
 
-          <!-- Parâmetros -->
-          <div id="params-section" class="cc-card hidden">
-            <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Parâmetros</h2>
-            <div id="params-form" class="grid grid-cols-2 md:grid-cols-3 gap-3"></div>
+          <!-- Mobile cards -->
+          <div class="md:hidden space-y-2" id="mod-pieces-cards"></div>
+
+          <!-- Desktop table -->
+          <div class="hidden md:block overflow-x-auto">
+            <table class="cc-table">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Nome</th>
+                  <th>Largura</th>
+                  <th>Altura</th>
+                  <th>Qtd</th>
+                  <th>Fita de Borda</th>
+                </tr>
+              </thead>
+              <tbody id="mod-pieces-desktop"></tbody>
+            </table>
           </div>
 
-          <!-- Lista de peças geradas -->
-          <div id="pieces-section" class="cc-card hidden">
-            <div class="flex items-center justify-between mb-3">
-              <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">
-                Peças Geradas (<span id="pieces-count">0</span>)
-              </h2>
-              <button id="btn-send-to-cut" class="cc-btn cc-btn-accent">
-                Enviar para Plano de Corte
-              </button>
-            </div>
-            <div class="overflow-x-auto">
-              <table class="cc-table" id="generated-pieces-table">
-                <thead>
-                  <tr>
-                    <th>Nome</th>
-                    <th>Largura</th>
-                    <th>Altura</th>
-                    <th>Qtd</th>
-                    <th>Fita de Borda</th>
-                  </tr>
-                </thead>
-                <tbody id="generated-pieces-body"></tbody>
-              </table>
-            </div>
-          </div>
+          <button id="btn-send-to-cut" class="cc-btn cc-btn-accent cc-btn-full mt-4">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"/></svg>
+            Enviar para Plano de Corte
+          </button>
         </div>
       </div>
     </div>
   `;
 
-  bindCatalogEvents(container);
+  bindGridEvents(container);
 }
 
-function renderCatalog() {
+function renderModuleGrid() {
   const grouped = {};
   for (const m of ALL_MODULES) {
     if (!grouped[m.environment]) grouped[m.environment] = [];
@@ -103,94 +123,115 @@ function renderCatalog() {
 
   let html = '';
   for (const [env, modules] of Object.entries(grouped)) {
-    html += `<div class="mb-3">
-      <div class="text-xs font-bold text-gray-400 uppercase mb-1">${ENV_ICONS[env] || ''} ${env}</div>
-      ${modules.map(m => `
-        <button class="module-select w-full text-left px-3 py-2 rounded-lg hover:bg-blue-50 transition text-sm flex items-center justify-between group"
-                data-module-id="${m.id}">
-          <div>
-            <div class="font-medium text-gray-700 group-hover:text-blue-700">${m.name}</div>
-            <div class="text-xs text-gray-400">${m.description}</div>
-          </div>
-          <svg class="w-4 h-4 text-gray-300 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-          </svg>
+    for (const m of modules) {
+      html += `
+        <button class="module-btn cc-card-hover" data-module-id="${m.id}">
+          <div class="text-2xl mb-1">${ENV_ICONS[env] || ''}</div>
+          <div class="font-semibold text-sm text-gray-700">${m.name}</div>
+          <div class="text-[10px] text-gray-400 mt-0.5">${env}</div>
         </button>
-      `).join('')}
-    </div>`;
+      `;
+    }
   }
   return html;
 }
 
-function bindCatalogEvents(container) {
-  container.querySelectorAll('.module-select').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const moduleId = btn.dataset.moduleId;
-      selectModule(moduleId);
-
-      // Highlight selected
-      container.querySelectorAll('.module-select').forEach(b => b.classList.remove('bg-blue-100'));
-      btn.classList.add('bg-blue-100');
-    });
+function bindGridEvents(container) {
+  container.querySelectorAll('[data-module-id]').forEach(btn => {
+    btn.addEventListener('click', () => selectModule(btn.dataset.moduleId));
   });
 }
 
-async function selectModule(moduleId) {
+function selectModule(moduleId) {
   const mod = getModuleById(moduleId);
   if (!mod) return;
 
   selectedModule = mod;
   currentParams = {};
-  for (const [key, def] of Object.entries(mod.params)) {
-    currentParams[key] = def.value;
-  }
+  for (const [k, v] of Object.entries(mod.params)) currentParams[k] = v.value;
 
-  // Título
-  document.getElementById('viewer-title').textContent = mod.name;
+  // Show detail, hide grid
+  document.getElementById('module-grid').classList.add('hidden');
+  document.getElementById('module-detail').classList.remove('hidden');
+  document.getElementById('mod-title').textContent = mod.name;
+  document.getElementById('mod-desc').textContent = mod.description;
 
-  // Inicializar viewer 3D se necessário
-  if (!viewerInitialized) {
-    const viewerEl = document.getElementById('viewer3d');
-    try {
-      await init3DViewer(viewerEl);
-      viewerInitialized = true;
-    } catch (err) {
-      viewerEl.innerHTML = `<div class="flex items-center justify-center h-full text-red-400">
-        Erro ao carregar Three.js: ${err.message}
-      </div>`;
-      console.error(err);
-    }
-  }
-
-  // Mostrar parâmetros
   renderParams();
-
-  // Gerar peças e atualizar 3D
   generateAndRender();
+
+  // Back button
+  document.getElementById('btn-back-modules').addEventListener('click', () => {
+    document.getElementById('module-grid').classList.remove('hidden');
+    document.getElementById('module-detail').classList.add('hidden');
+    destroyViewer();
+    viewerInitialized = false;
+    show3D = false;
+  });
+
+  // 3D toggle
+  document.getElementById('btn-toggle-3d').addEventListener('click', toggle3D);
+
+  // Send to cut
+  document.getElementById('btn-send-to-cut').addEventListener('click', () => {
+    const existing = loadPieces();
+    const totalPcs = generatedPieces.reduce((s, p) => s + (p.quantity || 1), 0);
+    const newPieces = generatedPieces.map(p => ({ ...p, moduleId: selectedModule.id }));
+    savePieces([...existing, ...newPieces]);
+    showToast(`${totalPcs} peça(s) enviadas!`, 'success');
+  });
+}
+
+async function toggle3D() {
+  show3D = !show3D;
+  const wrap = document.getElementById('viewer3d-wrap');
+  const off = document.getElementById('viewer3d-off');
+  const btn = document.getElementById('btn-toggle-3d');
+
+  if (show3D) {
+    wrap.classList.remove('hidden');
+    off.classList.add('hidden');
+    btn.textContent = 'Desativar 3D';
+
+    if (!viewerInitialized) {
+      try {
+        await init3DViewer(document.getElementById('viewer3d'));
+        viewerInitialized = true;
+        updateModel(generatedPieces, currentParams);
+      } catch (err) {
+        document.getElementById('viewer3d').innerHTML = `<div class="flex items-center justify-center h-full text-red-400 text-sm p-4">
+          Não foi possível carregar o 3D: ${err.message}
+        </div>`;
+      }
+    } else {
+      updateModel(generatedPieces, currentParams);
+    }
+  } else {
+    wrap.classList.add('hidden');
+    off.classList.remove('hidden');
+    btn.textContent = 'Ativar 3D';
+  }
 }
 
 function renderParams() {
   const form = document.getElementById('params-form');
-  const section = document.getElementById('params-section');
-  section.classList.remove('hidden');
-
   form.innerHTML = '';
+
   for (const [key, def] of Object.entries(selectedModule.params)) {
     const div = document.createElement('div');
     div.innerHTML = `
-      <label class="block text-xs text-gray-500 mb-1">${def.label}</label>
+      <label class="block text-[10px] text-gray-400 mb-1 font-medium">${def.label}</label>
       <div class="flex items-center gap-2">
         <input type="range" class="flex-1 param-slider" data-key="${key}"
-               min="${def.min}" max="${def.max}" step="${def.step}" value="${currentParams[key]}">
+               min="${def.min}" max="${def.max}" step="${def.step}" value="${currentParams[key]}"
+               style="accent-color: var(--primary)">
         <input type="number" class="cc-input param-number" data-key="${key}"
                min="${def.min}" max="${def.max}" step="${def.step}" value="${currentParams[key]}"
-               style="width: 70px">
+               style="width:72px">
       </div>
     `;
     form.appendChild(div);
   }
 
-  // Bind slider events
   form.querySelectorAll('.param-slider').forEach(slider => {
     const numInput = form.querySelector(`.param-number[data-key="${slider.dataset.key}"]`);
     slider.addEventListener('input', () => {
@@ -204,7 +245,7 @@ function renderParams() {
     const slider = form.querySelector(`.param-slider[data-key="${input.dataset.key}"]`);
     input.addEventListener('change', () => {
       currentParams[input.dataset.key] = parseFloat(input.value);
-      slider.value = input.value;
+      if (slider) slider.value = input.value;
       generateAndRender();
     });
   });
@@ -214,48 +255,55 @@ function generateAndRender() {
   if (!selectedModule) return;
 
   generatedPieces = selectedModule.generatePieces(currentParams);
+  const totalPcs = generatedPieces.reduce((s, p) => s + (p.quantity || 1), 0);
+  document.getElementById('pieces-count').textContent = totalPcs;
 
-  // Atualizar tabela de peças
-  const piecesSection = document.getElementById('pieces-section');
-  piecesSection.classList.remove('hidden');
+  // Mobile cards
+  const cardsEl = document.getElementById('mod-pieces-cards');
+  cardsEl.innerHTML = generatedPieces.map(p => {
+    const eb = formatEdgeBanding(p.edgeBanding);
+    return `
+      <div class="flex items-center gap-3 py-2 border-b border-gray-100 last:border-0">
+        <div style="width:10px;height:10px;border-radius:2px;background:${p.color}" class="flex-shrink-0"></div>
+        <div class="flex-1 min-w-0">
+          <div class="text-sm font-medium text-gray-700 truncate">${p.label}</div>
+          <div class="text-xs text-gray-400">${p.width} x ${p.height} mm</div>
+        </div>
+        <div class="text-right flex-shrink-0">
+          <div class="text-sm font-semibold text-gray-600">x${p.quantity}</div>
+          ${eb ? `<div class="text-[10px] text-amber-600 font-medium">${eb}</div>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
 
-  const totalPieces = generatedPieces.reduce((s, p) => s + (p.quantity || 1), 0);
-  document.getElementById('pieces-count').textContent = totalPieces;
-
-  const tbody = document.getElementById('generated-pieces-body');
+  // Desktop table
+  const tbody = document.getElementById('mod-pieces-desktop');
   tbody.innerHTML = generatedPieces.map(p => {
-    const eb = [];
-    if (p.edgeBanding.top) eb.push('C');
-    if (p.edgeBanding.bottom) eb.push('B');
-    if (p.edgeBanding.left) eb.push('E');
-    if (p.edgeBanding.right) eb.push('D');
+    const eb = formatEdgeBanding(p.edgeBanding);
     return `
       <tr>
-        <td><div class="flex items-center gap-2">
-          <div style="width:12px;height:12px;border-radius:3px;background:${p.color}"></div>
-          ${p.label}
-        </div></td>
+        <td><div style="width:12px;height:12px;border-radius:3px;background:${p.color}"></div></td>
+        <td class="font-medium">${p.label}</td>
         <td>${p.width} mm</td>
         <td>${p.height} mm</td>
         <td>${p.quantity}</td>
-        <td>${eb.length > 0 ? `<span class="text-amber-600 font-medium">${eb.join(', ')}</span>` : '-'}</td>
+        <td>${eb ? `<span class="text-amber-600 font-medium">${eb}</span>` : '-'}</td>
       </tr>
     `;
   }).join('');
 
-  // Bind enviar para corte
-  document.getElementById('btn-send-to-cut').onclick = () => {
-    const existing = loadPieces();
-    const newPieces = generatedPieces.map(p => ({
-      ...p,
-      moduleId: selectedModule.id,
-    }));
-    savePieces([...existing, ...newPieces]);
-    showToast(`${totalPieces} peça(s) enviadas para o Plano de Corte!`, 'success');
-  };
-
-  // Atualizar modelo 3D
-  if (viewerInitialized) {
+  // Update 3D if active
+  if (show3D && viewerInitialized) {
     updateModel(generatedPieces, currentParams);
   }
+}
+
+function formatEdgeBanding(eb) {
+  const parts = [];
+  if (eb.top) parts.push('C');
+  if (eb.bottom) parts.push('B');
+  if (eb.left) parts.push('E');
+  if (eb.right) parts.push('D');
+  return parts.join(', ');
 }
