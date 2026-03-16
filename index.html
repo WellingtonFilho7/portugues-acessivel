@@ -2,17 +2,10 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <title>Português Acessível (Libras)</title>
+  <title>CorteCloud Local</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Ferramenta para simplificar e reestruturar textos no Estilo Libras, com UI limpa e responsiva.">
-
-  <!-- PWA -->
+  <meta name="description" content="Ferramenta local para otimização de planos de corte e módulos 3D de móveis.">
   <meta name="theme-color" content="#1e3a8a">
-  <link rel="manifest" href="manifest.json">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Português Acessível">
-  <link rel="apple-touch-icon" href="icons/icon-192.png">
 
   <!-- Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -22,408 +15,66 @@
         extend: {
           colors: {
             primary: '#1e3a8a',
+            'primary-light': '#2563eb',
             secondary: '#3b82f6',
             accent: '#f59e0b',
-            background: '#f9fafb',
+            surface: '#f8fafc',
             card: '#ffffff',
-            textdark: '#1f2937',
-            textlight: '#4b5563',
           }
         }
       }
     }
   </script>
-  <style>
-    :root{--primary:#1e3a8a;--secondary:#3b82f6;--accent:#f59e0b}
-    body{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Ubuntu,sans-serif}
-    .card{background:#fff;border-radius:14px;box-shadow:0 1px 2px rgba(0,0,0,.06)}
-    .out{min-height:180px;overflow-x:auto;scrollbar-width:thin}
-    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-    .btn{transition:all .2s ease-in-out}
-    .btn:not(:disabled){border:1px solid var(--secondary);color:var(--secondary)}
-    .btn:hover:not(:disabled){background-color:var(--secondary);color:#fff;box-shadow:0 6px 14px rgba(59,130,246,.25)}
-    input[type="checkbox"],input[type="radio"]{accent-color:var(--primary)}
-    .highlight-simple{border:2px solid #3b82f6;box-shadow:0 12px 20px rgba(59,130,246,.18)}
-    .highlight-libras{border:2px solid #1e3a8a;box-shadow:0 12px 20px rgba(30,58,138,.18)}
-  </style>
+
+  <!-- Three.js via importmap -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <!-- Alpine.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
+
+  <link rel="stylesheet" href="css/styles.css">
 </head>
-<body class="bg-background text-textdark min-h-screen">
-  <div class="max-w-5xl mx-auto p-4 md:p-6">
-    <header class="mb-6 text-center">
-      <h1 class="text-3xl font-extrabold text-primary">Português Acessível</h1>
-      <p class="text-textlight mt-1">Simplificação e reestruturação de textos no Estilo Libras.</p>
-      <span class="inline-block mt-3 px-3 py-1 bg-accent text-textdark text-xs font-semibold rounded-full shadow">Dicionário agressivo • Remoção de clíticos segura</span>
-    </header>
+<body class="bg-surface text-gray-800 min-h-screen flex flex-col">
 
-    <div id="notification" style="display:none" class="fixed bottom-5 left-1/2 -translate-x-1/2 px-5 py-3 rounded-lg text-sm font-medium z-50 shadow-xl"></div>
-
-    <div class="grid lg:grid-cols-2 gap-6 mb-6">
-      <!-- Entrada -->
-      <div class="card p-5 ring-1 ring-gray-100">
-        <h3 class="text-xl font-semibold mb-3">1. Texto de entrada</h3>
-        <textarea id="input" placeholder="Cole ou digite seu texto aqui..." class="w-full min-h-[200px] p-3 border border-gray-200 rounded-lg focus:ring-primary focus:border-primary"></textarea>
-        <div class="flex gap-3 mt-4">
-          <button onclick="fillSample()" class="btn flex-1 bg-white rounded-lg">Exemplo</button>
-          <button onclick="clearAll()" class="btn flex-1 bg-white rounded-lg">Limpar</button>
-          <button onclick="runTransform()" id="processButton" class="flex-1 bg-primary text-white font-bold rounded-lg shadow hover:bg-secondary border-none">Gerar</button>
-        </div>
-      </div>
-
-      <!-- Config -->
-      <div class="card p-5 ring-1 ring-gray-100">
-        <h3 class="text-xl font-semibold mb-3">2. Configurações</h3>
-        <div class="space-y-5">
-          <div>
-            <p class="text-sm font-medium mb-2">Modo de destaque</p>
-            <div class="flex flex-wrap gap-x-6 gap-y-2 text-sm">
-              <label class="inline-flex items-center cursor-pointer"><input type="radio" name="mode" value="simple" checked class="h-4 w-4" onchange="updateModeDisplay()"><span class="ml-2">Simplificado Leve</span></label>
-              <label class="inline-flex items-center cursor-pointer"><input type="radio" name="mode" value="libras" class="h-4 w-4" onchange="updateModeDisplay()"><span class="ml-2">Estilo Libras</span></label>
-            </div>
-          </div>
-          <div>
-            <p class="text-sm font-medium mb-2">Opções do Estilo Libras</p>
-            <div class="grid grid-cols-2 gap-2 text-sm text-textlight">
-              <label class="inline-flex items-center cursor-pointer"><input type="checkbox" id="strictOrder" checked class="h-4 w-4 rounded"><span class="ml-2">Tempo no início</span></label>
-              <label class="inline-flex items-center cursor-pointer"><input type="checkbox" id="reduceVerbs" class="h-4 w-4 rounded"><span class="ml-2">Converter para infinitivo</span></label>
-              <label class="inline-flex items-center cursor-pointer"><input type="checkbox" id="useWhitelist" checked class="h-4 w-4 rounded"><span class="ml-2">Respeitar exceções</span></label>
-            </div>
-          </div>
-          <div>
-            <p class="text-sm font-medium mb-2">Lista de exceções (uma por linha)</p>
-            <textarea id="whitelistBox" class="w-full min-h-[120px] p-3 border border-gray-200 rounded-lg focus:ring-primary focus:border-primary text-sm">discipulado
-família
-famílias
-comunidade
-comunidades
-verdade
-belo
-bom
-Salmo
-Salmos
-Libras
-Português
-Bíblia
-firme
-registrar
-compartilhar
-documente
-forte</textarea>
-          </div>
-          <button onclick="loadWhitelist()" class="w-full py-2 bg-accent text-textdark font-medium rounded-lg">Aplicar exceções</button>
-        </div>
+  <!-- Navbar -->
+  <nav class="bg-primary text-white shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="#/" class="text-xl font-bold tracking-tight flex items-center gap-2">
+        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/>
+        </svg>
+        CorteCloud Local
+      </a>
+      <div class="flex gap-1" id="nav-links">
+        <a href="#/corte" class="nav-link px-4 py-2 rounded-lg text-sm font-medium hover:bg-white/20 transition">
+          Plano de Corte
+        </a>
+        <a href="#/modulos" class="nav-link px-4 py-2 rounded-lg text-sm font-medium hover:bg-white/20 transition">
+          Módulos 3D
+        </a>
+        <a href="#/projetos" class="nav-link px-4 py-2 rounded-lg text-sm font-medium hover:bg-white/20 transition">
+          Projetos
+        </a>
       </div>
     </div>
+  </nav>
 
-    <!-- Saídas -->
-    <div class="grid lg:grid-cols-2 gap-6" id="outputContainer">
-      <div id="cardSimple" class="card p-5 ring-1 ring-gray-100">
-        <div class="flex justify-between items-center mb-2">
-          <h3 class="text-xl font-semibold text-secondary">Versão Simplificada</h3>
-          <button onclick="copyOut('#outSimple', this)" class="btn text-sm px-3 py-1 bg-white rounded-lg">Copiar</button>
-        </div>
-        <pre id="outSimple" class="out bg-gray-50 text-textdark p-3 rounded-lg border border-gray-200 text-sm"></pre>
-      </div>
+  <!-- Main content area -->
+  <main id="app" class="flex-1 max-w-7xl mx-auto w-full px-4 py-6">
+    <!-- Content injected by router -->
+  </main>
 
-      <div id="cardLibras" class="card p-5 ring-1 ring-gray-100">
-        <div class="flex justify-between items-center mb-2">
-          <h3 class="text-xl font-semibold text-primary">Versão Estilo Libras</h3>
-          <button onclick="copyOut('#outLibras', this)" class="btn text-sm px-3 py-1 bg-white rounded-lg">Copiar</button>
-        </div>
-        <pre id="outLibras" class="out mono bg-gray-50 text-textdark p-3 rounded-lg border border-gray-200 text-base font-bold"></pre>
-      </div>
-    </div>
+  <!-- Toast container -->
+  <div id="toast-container" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2"></div>
 
-    <div class="mt-8 text-center text-xs text-textlight">v2.1 UI • clíticos seguros • infinitivo conservador • testes embutidos</div>
-  </div>
-
-<script>
-let WHITELIST = new Set();
-let notificationTimer;
-
-function showNotification(message, colorKey='secondary', duration=2600){
-  const notif = document.getElementById('notification');
-  notif.textContent = message;
-  const colors = tailwind.config.theme.extend.colors;
-  notif.style.backgroundColor = colors[colorKey] || '#3b82f6';
-  notif.style.color = colorKey === 'accent' ? '#1f2937' : '#fff';
-  notif.style.display = 'block';
-  clearTimeout(notificationTimer);
-  notificationTimer = setTimeout(()=> notif.style.display='none', duration);
-}
-function loadWhitelist(){
-  const lines = document.getElementById('whitelistBox').value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
-  WHITELIST = new Set(lines.map(x=> x.toLowerCase()));
-  showNotification('Exceções aplicadas','accent');
-}
-function updateModeDisplay(){
-  const selected = document.querySelector('input[name="mode"]:checked').value;
-  const cardS = document.getElementById('cardSimple');
-  const cardL = document.getElementById('cardLibras');
-  cardS.classList.toggle('highlight-simple', selected==='simple');
-  cardL.classList.toggle('highlight-libras', selected==='libras');
-}
-
-function normalizeCommon(t){
-  return t
-    .replace(/\s+/g,' ')
-    .replace(/\btô\b/gi,'estou')
-    .replace(/\btá\b/gi,'está')
-    .replace(/\bpra\b/gi,'para')
-    .replace(/\bpro\b/gi,'para o')
-    .replace(/\bcê\b/gi,'você')
-    .replace(/\bvc\b/gi,'você')
-    .replace(/\bq\b/gi,'que');
-}
-
-const TEMP_MARKERS=["hoje","amanhã","ontem","agora","depois","antes","cedo","tarde","noite","segunda","terça","quarta","quinta","sexta","sábado","domingo","janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
-const FILLERS=["realmente","basicamente","literalmente","provavelmente","talvez","certamente","claramente","apenas","somente","inclusive"];
-const SIMPLE_REPLACE=new Map(Object.entries({"todavia":"mas","entretanto":"mas","porém":"mas","consequentemente":"por isso","posteriormente":"depois","anteriormente":"antes"}));
-
-// ---------- Remoção de clíticos segura ----------
-function removeClitics(text){
-  let t = text;
-  t = t.replace(/(\p{L}+?)-(se|me|te|nos|vos|lhe|lhes)\b/giu, '$1');               // hifenizados
-  t = t.replace(/\b(se|me|te|nos|vos|lhe|lhes)\b\s+(?=\p{L}+?(?:ar|er|ir)\b)/giu,''); // antes de infinitivo
-  t = t.replace(/\b(se|me|te|nos|vos|lhe|lhes)\b/giu, '');                           // isolados
-  return t.replace(/\s{2,}/g,' ').trim();
-}
-
-// ---------- Redução para infinitivo (conservadora) ----------
-function reduceVerbSafely(word){
-  const w = word.toLowerCase();
-  if(WHITELIST.has(w)) return word;
-  if(w.length < 4) return word;
-  if(/[^a-záéíóúâêôãõç]/i.test(w)) return word;
-
-  // Gerúndio
-  if(/ando$/i.test(w)) return word.replace(/ando$/i,'ar');
-  if(/endo$/i.test(w)) return word.replace(/endo$/i,'er');
-  if(/indo$/i.test(w)) return word.replace(/indo$/i,'ir');
-
-  // Particípio regular
-  if(/ados?$/i.test(w)) return word.replace(/ados?$/i,'ar');
-  if(/idos?$/i.test(w)) return word.replace(/idos?$/i,'ir');
-
-  // Infinitivo pessoal / futuro do subjuntivo
-  if(/arem$/i.test(w)) return word.replace(/arem$/i,'ar');
-  if(/erem$/i.test(w)) return word.replace(/erem$/i,'er');
-  if(/irem$/i.test(w)) return word.replace(/irem$/i,'ir');
-
-  // Futuro simples plural
-  if(/arão$/i.test(w)) return word.replace(/arão$/i,'ar');
-  if(/erão$/i.test(w)) return word.replace(/erão$/i,'er');
-  if(/irão$/i.test(w)) return word.replace(/irão$/i,'ir');
-
-  return word;
-}
-
-// ---------- Dicionário agressivo ----------
-function escapeRegExp(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
-const AGGR_MAP = [
-  ["prática educacional","jeito de ensinar"],
-  ["voz de apoio","pessoa que ajuda"],
-  ["comunicação","conversa"],
-  ["conectar-se","juntar"],
-  ["desenvolver","crescer"],
-  ["aprimorar","melhorar"],
-  ["aperfeiçoar","melhorar"],
-  ["convicção","certeza"],
-  ["crença","acreditar"],
-  ["jornada","história"],
-  ["trajetória","caminho"],
-  ["conquista","vitória"],
-  ["encorajamento","ânimo"],
-  ["experiência","vivência"],
-  ["o que viveu","vivência"],
-  ["contribuir","ajudar"],
-  ["fortalecer","ficar forte"],
-  ["documentar","registrar"],
-  ["celebrar","comemorar"],
-  ["manter-se firme","ficar firme"],
-  ["manter firme","ficar firme"],
-  ["mantenha-se firme","ficar firme"],
-  ["mantenha firme","ficar firme"],
-  ["dúvidas","perguntas"],
-  ["enfrentou","passou"]
-].sort((a,b)=> b[0].length - a[0].length);
-function aggressiveSubstitutions(text){
-  let t = ' ' + text + ' ';
-  for(const [from,to] of AGGR_MAP){
-    if(WHITELIST.has(from.toLowerCase())) continue;
-    const re = new RegExp('(\\b)'+escapeRegExp(from)+'(\\b)','gi');
-    t = t.replace(re, `$1${to}$2`);
-  }
-  return t.trim();
-}
-
-const LINKERS=new Set(["de","do","da","dos","das","dum","duma","em","no","na","nos","nas","para","pra","por","com","sem","sobre","até","desde","entre","a","ao","à","aos","às","e","mas","ou","que","porque","pois","pelo","pela","pelos","pelas","o","a","os","as","um","uma","uns","umas","meu","minha","meus","minhas","seu","sua","seus","suas","nosso","nossa","nossos","nossas","teu","tua","teus","tuas","dele","dela","deles","delas"]);
-
-function splitSentences(t){
-  return t.replace(/\s+/g,' ').split(/(?<=[\.!?;])\s+|,\s+(?=[A-ZÁÉÍÓÚÃÕÂÊÔ0-9])/g).map(s=>s.trim()).filter(Boolean);
-}
-
-function simplifySentence(s){
-  let out=' '+s+' ';
-  SIMPLE_REPLACE.forEach((to,from)=>{ out=out.replace(new RegExp('(\\b)'+from+'(\\b)','gi'),`$1${to}$2`); });
-  FILLERS.forEach(w=>{ out=out.replace(new RegExp('(\\b)'+w+'(\\b)','gi'),' '); });
-  out=out.replace(/\s+/g,' ').trim();
-  if(out.length>0){ out=out.charAt(0).toUpperCase()+out.slice(1); if(!/[\.\?\!]$/.test(out)) out+='.'; }
-  return out;
-}
-
-// ---------- Pipeline Libras ----------
-function toLibrasStyleLine(s, opts){
-  const { strictOrder=true, reduce=false, useWhitelist=true } = opts;
-
-  // 1. Corrige artefatos de hífen
-  s = s.replace(/(\w+)-(com|se|lhe|me|te|nos|vos)\b/gi,'$1 $2')
-       .replace(/(\w+)-(firme)\b/gi,'$1 $2');
-
-  // 2. Remove clíticos antes de outras transformações
-  s = removeClitics(s);
-
-  
-  // 3. Reduz verbos (se a opção estiver ativada)
-if (reduce) {
-  // tokens funcionais que terminam em -ndo/-ado/-ido mas não são verbos
-  const NON_VERB_TOKENS = new Set(['quando']);
-  // só reduz quando bater com terminações típicas de formas verbais
-  const reducibleSuffix = /(ando|endo|indo|ados?|idos?|arem|erem|irem|arão|erão|irão)$/i;
-
-  s = s.split(/\s+/).map(w => {
-    const lw = w.toLowerCase();
-    if (NON_VERB_TOKENS.has(lw)) return w;      // preserva "quando"
-    if (!reducibleSuffix.test(lw)) return w;    // não parece forma verbal → não reduz
-    return reduceVerbSafely(w);                 // reduz com a função existente
-  }).join(' ');
-}
-
-
-  // 4. Aplica o dicionário agressivo (depois da redução)
-  s = aggressiveSubstitutions(s);
-
-  // Limpeza leve
-  let x = s.replace(/["“”'()\[\]]+/g,' ')
-           .replace(/[.!?]$/,'')
-           .trim()
-           .replace(/[,;:]+/g,' ');
-
-  let tokens = x.split(/\s+/).filter(Boolean);
-
-  // Remoção de ligações e fillers
-  tokens = tokens.filter(t=>{
-    const low=t.toLowerCase();
-    if(useWhitelist && WHITELIST.has(low)) return true;
-    if(t.includes('-')) return true;
-    return !LINKERS.has(low) && !FILLERS.includes(low);
-  });
-
-  // Marcador temporal relativo
-  if(/\bquando\b/i.test(s)) tokens.unshift('FUTURO');
-
-  // Tempo no início
-  const tempo=[], resto=[];
-  if(strictOrder){ tokens.forEach(t => (TEMP_MARKERS.includes(t.toLowerCase()) ? tempo : resto).push(t)); }
-  else { resto.push(...tokens); }
-
-  const ordered = (strictOrder && tempo.length) ? [...tempo, ...resto] : tokens;
-
-  // Upper, quebra e ponto final
-  const upper = ordered.join(' ').replace(/\s+/g,' ').trim().toUpperCase();
-  const MAX=10;
-  const words=upper.split(' ');
-  const lines=[];
-  for(let i=0;i<words.length;i+=MAX) lines.push(words.slice(i,i+MAX).join(' '));
-
-  if(lines.length){
-    const last=lines[lines.length-1];
-    if(!/[.!?]$/.test(last)) lines[lines.length-1]=last+'.';
-  }
-  return lines;
-}
-
-// ---------- UI ----------
-function runTransform(){
-  const btn=document.getElementById('processButton');
-  btn.textContent='Processando...'; btn.disabled=true;
-
-  const raw=document.getElementById('input').value.trim();
-  const outS=document.getElementById('outSimple');
-  const outL=document.getElementById('outLibras');
-
-  if(!raw){ outS.textContent=''; outL.textContent=''; showNotification('Insira um texto.','accent',1600); btn.textContent='Gerar'; btn.disabled=false; return; }
-
-  const strictOrder=document.getElementById('strictOrder').checked;
-  const reduce=document.getElementById('reduceVerbs').checked;
-  const useWhitelist=document.getElementById('useWhitelist').checked;
-
-  try{
-    const norm=normalizeCommon(raw);
-    const sentences=splitSentences(norm);
-
-    const simpleLines=sentences.map(simplifySentence);
-    outS.textContent='• '+simpleLines.join('\n• ');
-
-    const librasAll=[];
-    sentences.forEach(s=>{
-      const segs=toLibrasStyleLine(s,{strictOrder,reduce,useWhitelist});
-      if(segs.length){ librasAll.push('• '+segs.join('\n')); }
-    });
-    outL.textContent=librasAll.join('\n\n');
-
-    updateModeDisplay();
-    showNotification('Texto gerado com sucesso!','secondary');
-  }catch(e){
-    console.error(e);
-    outS.textContent='Erro de processamento.';
-    outL.textContent='ERRO: Verifique a pontuação ou tente um texto menor.';
-    showNotification('Ocorreu um erro.','accent');
-  }finally{
-    setTimeout(()=>{ btn.textContent='Gerar'; btn.disabled=false; },160);
-  }
-}
-
-const originalSample = "Continue aprendendo, conectando-se com outras famílias e aprimorando sua prática educacional. Quando outras mães passarem pelas mesmas dúvidas que você enfrentou, seja a voz de apoio e encorajamento que gostaria de ter ouvido. Documente a jornada de seus filhos, celebre as conquistas e mantenha-se firme em sua convicção. Compartilhe sua vivência, ofereça ajuda e contribua para que a nossa comunidade possa ficar mais forte.";
-function fillSample(){ document.getElementById('input').value=originalSample; showNotification('Exemplo carregado','accent'); }
-function clearAll(){ document.getElementById('input').value=''; document.getElementById('outSimple').textContent=''; document.getElementById('outLibras').textContent=''; document.getElementById('cardSimple').classList.remove('highlight-simple'); document.getElementById('cardLibras').classList.remove('highlight-libras'); showNotification('Campos limpos','accent',1400); }
-function copyOut(sel,btn){ const el=document.querySelector(sel); const t=el.textContent; if(!t.trim()) return flash(btn,'Vazio!'); if(navigator.clipboard&&window.isSecureContext){ navigator.clipboard.writeText(t).then(()=>flash(btn,'Copiado')).catch(()=>legacyCopy(t,btn)); } else { legacyCopy(t,btn);} }
-function legacyCopy(t,btn){ const ta=document.createElement('textarea'); ta.value=t; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.focus(); ta.select(); try{ document.execCommand('copy'); flash(btn,'Copiado'); }catch(e){ flash(btn,'Erro'); } document.body.removeChild(ta);} 
-function flash(btn,msg){ const old=btn.textContent; btn.disabled=true; btn.textContent=msg; setTimeout(()=>{ btn.textContent=old; btn.disabled=false; },1000);} 
-
-// ---------- Testes embutidos ----------
-window.runSelfTests = function(){
-  const CASES = [
-    {in:'Ele precisa lembrar-se da promessa.', out:'• ELE PRECISAR LEMBRAR PROMESSA.'},
-    {in:'Devemos manter-se firmes na fé.', out:'• NÓS PRECISAR FICAR FIRME FÉ.'},
-    {in:'Ele vai se levantar cedo.', out:'• ELE FUTURO LEVANTAR CEDO.'},
-    {in:'Você deve me ajudar agora.', out:'• VOCÊ PRECISAR AJUDAR AGORA.'},
-    {in:'Eu vou à escola para aprender e crescer.', out:'• EU IR ESCOLA APRENDER CRESCER.'},
-    {in:'Devemos aprimorando nossa prática educacional.', out:'• NÓS PRECISAR MELHORAR JEITO ENSINAR.'},
-    {in:'Quando outras mães passarem pelas mesmas dúvidas que você enfrentou, seja a voz de apoio e encorajamento que gostaria de ter ouvido.', out:'• FUTURO OUTRAS MÃES TER PERGUNTAS IGUAIS VOCÊ PASSOU.\\n• VOCÊ SER PESSOA QUE AJUDA DAR ÂNIMO IGUAL VOCÊ QUERIA ANTES.'},
-    {in:'Documente a jornada de seus filhos, celebre as conquistas e mantenha-se firme em sua convicção.', out:'• VOCÊ REGISTRAR HISTÓRIA SEUS FILHOS COMEMORAR VITÓRIAS FICAR FIRME SUA CERTEZA.'}
-  ];
-  const strictOrder=true, reduce=true, useWhitelist=true;
-  function runOne(input){
-    const sentences = splitSentences(normalizeCommon(input));
-    const lines=[]; sentences.forEach(s=> toLibrasStyleLine(s,{strictOrder,reduce,useWhitelist}).forEach(L=>lines.push('• '+L)) );
-    return lines.join('\\n');
-  }
-  const norm = s=> s.replace(/^•\\s*/gm,'').replace(/\\s+/g,' ').replace(/\\s,\\s/g,', ').replace(/\\s\\./g,'.').trim();
-  let pass=0; const details=[];
-  CASES.forEach(c=>{ const got=runOne(c.in); const ok = norm(got)===norm(c.out); if(ok) pass++; details.push({input:c.in, expected:c.out, got, ok}); });
-  console.table(details);
-  alert(`${pass}/${CASES.length} testes passaram. Veja o console para detalhes.`);
-  return details;
-}
-
-window.onload = function(){ fillSample(); loadWhitelist(); updateModeDisplay(); };
-</script>
-
-<!-- Service Worker registration -->
-<script>
-if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>{ navigator.serviceWorker.register('./sw.js').catch(console.error); });
-}
-</script>
+  <!-- App entry point -->
+  <script type="module" src="js/app.js"></script>
 </body>
 </html>
