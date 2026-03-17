@@ -9,6 +9,48 @@ let pieces = [];
 let selectedSheet = null;
 let optimizationResult = null;
 
+// ==================== VALIDATION ====================
+function validatePiece(piece, sheet) {
+  const errors = [];
+  const warnings = [];
+
+  const usableW = sheet.width - 2 * sheet.trimming;
+  const usableH = sheet.height - 2 * sheet.trimming;
+
+  if (!piece.width || piece.width <= 0) {
+    errors.push({ field: 'width', msg: 'Largura inválida' });
+  } else if (piece.width > usableW && piece.width > usableH) {
+    errors.push({ field: 'width', msg: `Largura ${piece.width}mm excede a chapa (máx ${Math.max(usableW, usableH)}mm)` });
+  }
+
+  if (!piece.height || piece.height <= 0) {
+    errors.push({ field: 'height', msg: 'Altura inválida' });
+  } else if (piece.height > usableH && piece.height > usableW) {
+    errors.push({ field: 'height', msg: `Altura ${piece.height}mm excede a chapa (máx ${Math.max(usableW, usableH)}mm)` });
+  }
+
+  if (piece.quantity === 0) {
+    warnings.push({ field: 'qty', msg: 'Qtd = 0: peça ignorada na otimização' });
+  }
+
+  if (!piece.label || piece.label.trim() === '') {
+    warnings.push({ field: 'label', msg: 'Peça sem nome' });
+  }
+
+  return { errors, warnings, hasError: errors.length > 0, hasWarning: warnings.length > 0 };
+}
+
+function getValidationSummary(pieces, sheet) {
+  let errorCount = 0;
+  let warningCount = 0;
+  for (const p of pieces) {
+    const v = validatePiece(p, sheet);
+    if (v.hasError) errorCount++;
+    else if (v.hasWarning) warningCount++;
+  }
+  return { errorCount, warningCount };
+}
+
 // ==================== FURNITURE PRESETS ====================
 const PRESETS = ALL_MODULES.map(m => ({
   id: m.id,
@@ -135,6 +177,7 @@ export function renderCuttingPage(container) {
             <button id="btn-add-piece" class="cc-btn cc-btn-secondary cc-btn-sm">+ Peça</button>
           </div>
         </div>
+        <div id="validation-summary"></div>
 
         ${pieces.length === 0 ? `
           <div class="empty-state py-8">
@@ -182,7 +225,32 @@ export function renderCuttingPage(container) {
 
   renderPiecesMobile();
   renderPiecesDesktop();
+  renderValidationSummary();
   bindEvents();
+}
+
+function renderValidationSummary() {
+  const el = document.getElementById('validation-summary');
+  if (!el || pieces.length === 0) { if (el) el.innerHTML = ''; return; }
+
+  const { errorCount, warningCount } = getValidationSummary(pieces, selectedSheet);
+
+  if (errorCount === 0 && warningCount === 0) {
+    el.innerHTML = `<div class="validation-summary bg-green-50 text-green-700 mb-3">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+      Todas as peças estão válidas
+    </div>`;
+    return;
+  }
+
+  const parts = [];
+  if (errorCount > 0) parts.push(`<span class="text-red-600">${errorCount} peça(s) com erro</span>`);
+  if (warningCount > 0) parts.push(`<span class="text-amber-600">${warningCount} aviso(s)</span>`);
+
+  el.innerHTML = `<div class="validation-summary ${errorCount > 0 ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'} mb-3">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M12 2L2 22h20L12 2z"/></svg>
+    ${parts.join(' &middot; ')}
+  </div>`;
 }
 
 // ==================== MOBILE CARD VIEW ====================
@@ -190,8 +258,15 @@ function renderPiecesMobile() {
   const container = document.getElementById('pieces-cards');
   if (!container) return;
 
-  container.innerHTML = pieces.map((p, i) => `
-    <div class="piece-card animate-slide-up" style="animation-delay:${i * 30}ms" data-idx="${i}">
+  container.innerHTML = pieces.map((p, i) => {
+    const v = validatePiece(p, selectedSheet);
+    const cardClass = v.hasError ? 'piece-error' : v.hasWarning ? 'piece-warning' : '';
+    const errMsgs = [...v.errors.map(e => `<div class="piece-error-msg">&bull; ${e.msg}</div>`), ...v.warnings.map(w => `<div class="piece-warning-msg">&bull; ${w.msg}</div>`)].join('');
+    const widthErr = v.errors.some(e => e.field === 'width') ? 'input-error' : '';
+    const heightErr = v.errors.some(e => e.field === 'height') ? 'input-error' : '';
+
+    return `
+    <div class="piece-card animate-slide-up ${cardClass}" style="animation-delay:${i * 30}ms" data-idx="${i}">
       <div class="flex items-start justify-between mb-2">
         <input type="text" class="font-semibold text-sm text-gray-800 bg-transparent border-none outline-none flex-1 p-0 piece-m-label"
                value="${p.label}" placeholder="Nome da peça">
@@ -202,17 +277,18 @@ function renderPiecesMobile() {
       <div class="grid grid-cols-3 gap-2 mb-3">
         <div>
           <label class="block text-[10px] text-gray-400 font-medium">Largura</label>
-          <input type="number" class="cc-input text-sm piece-m-width" value="${p.width}" min="1">
+          <input type="number" class="cc-input text-sm piece-m-width ${widthErr}" value="${p.width}" min="1">
         </div>
         <div>
           <label class="block text-[10px] text-gray-400 font-medium">Altura</label>
-          <input type="number" class="cc-input text-sm piece-m-height" value="${p.height}" min="1">
+          <input type="number" class="cc-input text-sm piece-m-height ${heightErr}" value="${p.height}" min="1">
         </div>
         <div>
           <label class="block text-[10px] text-gray-400 font-medium">Qtd</label>
           <input type="number" class="cc-input text-sm piece-m-qty" value="${p.quantity}" min="1" max="100">
         </div>
       </div>
+      ${errMsgs ? `<div class="mb-2">${errMsgs}</div>` : ''}
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
           <span class="text-[10px] text-gray-400 font-medium">Fita:</span>
@@ -231,17 +307,40 @@ function renderPiecesMobile() {
         </div>
         <div style="width:8px;height:8px;border-radius:2px;background:${p.color}" class="flex-shrink-0"></div>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 
   // Bind mobile events
   container.querySelectorAll('.piece-card').forEach(card => {
     const idx = parseInt(card.dataset.idx);
     const p = pieces[idx];
-    card.querySelector('.piece-m-label').addEventListener('change', e => { p.label = e.target.value; save(); });
-    card.querySelector('.piece-m-width').addEventListener('change', e => { p.width = parseInt(e.target.value) || 1; save(); });
-    card.querySelector('.piece-m-height').addEventListener('change', e => { p.height = parseInt(e.target.value) || 1; save(); });
-    card.querySelector('.piece-m-qty').addEventListener('change', e => { p.quantity = parseInt(e.target.value) || 1; save(); });
+
+    const updateValidation = () => {
+      const v = validatePiece(p, selectedSheet);
+      card.classList.remove('piece-error', 'piece-warning');
+      if (v.hasError) card.classList.add('piece-error');
+      else if (v.hasWarning) card.classList.add('piece-warning');
+
+      const widthInput = card.querySelector('.piece-m-width');
+      const heightInput = card.querySelector('.piece-m-height');
+      widthInput.classList.toggle('input-error', v.errors.some(e => e.field === 'width'));
+      heightInput.classList.toggle('input-error', v.errors.some(e => e.field === 'height'));
+
+      let msgEl = card.querySelector('.validation-msgs');
+      const msgs = [...v.errors.map(e => `<div class="piece-error-msg">&bull; ${e.msg}</div>`), ...v.warnings.map(w => `<div class="piece-warning-msg">&bull; ${w.msg}</div>`)].join('');
+      if (!msgEl && msgs) {
+        msgEl = document.createElement('div');
+        msgEl.className = 'validation-msgs mb-2';
+        card.querySelector('.grid').after(msgEl);
+      }
+      if (msgEl) msgEl.innerHTML = msgs;
+      renderValidationSummary();
+    };
+
+    card.querySelector('.piece-m-label').addEventListener('input', e => { p.label = e.target.value; save(); updateValidation(); });
+    card.querySelector('.piece-m-width').addEventListener('input', e => { p.width = parseInt(e.target.value) || 0; save(); updateValidation(); });
+    card.querySelector('.piece-m-height').addEventListener('input', e => { p.height = parseInt(e.target.value) || 0; save(); updateValidation(); });
+    card.querySelector('.piece-m-qty').addEventListener('input', e => { p.quantity = parseInt(e.target.value) || 0; save(); updateValidation(); });
     card.querySelector('.piece-m-eb-top').addEventListener('change', e => { p.edgeBanding.top = e.target.checked; save(); });
     card.querySelector('.piece-m-eb-bottom').addEventListener('change', e => { p.edgeBanding.bottom = e.target.checked; save(); });
     card.querySelector('.piece-m-eb-left').addEventListener('change', e => { p.edgeBanding.left = e.target.checked; save(); });
@@ -257,11 +356,18 @@ function renderPiecesDesktop() {
   const tbody = document.getElementById('pieces-body-desktop');
   if (!tbody) return;
 
-  tbody.innerHTML = pieces.map((p, i) => `
-    <tr data-idx="${i}">
+  tbody.innerHTML = pieces.map((p, i) => {
+    const v = validatePiece(p, selectedSheet);
+    const rowClass = v.hasError ? 'piece-error' : v.hasWarning ? 'piece-warning' : '';
+    const widthErr = v.errors.some(e => e.field === 'width') ? 'input-error' : '';
+    const heightErr = v.errors.some(e => e.field === 'height') ? 'input-error' : '';
+    const errTitle = [...v.errors.map(e => e.msg), ...v.warnings.map(w => w.msg)].join(' | ');
+
+    return `
+    <tr data-idx="${i}" class="${rowClass}" ${errTitle ? `title="${errTitle}"` : ''}>
       <td><input type="text" class="cc-input piece-label" value="${p.label}" placeholder="Nome" style="min-width:130px"></td>
-      <td><input type="number" class="cc-input piece-width" value="${p.width}" min="1" style="width:80px"></td>
-      <td><input type="number" class="cc-input piece-height" value="${p.height}" min="1" style="width:80px"></td>
+      <td><input type="number" class="cc-input piece-width ${widthErr}" value="${p.width}" min="1" style="width:80px"></td>
+      <td><input type="number" class="cc-input piece-height ${heightErr}" value="${p.height}" min="1" style="width:80px"></td>
       <td><input type="number" class="cc-input piece-qty" value="${p.quantity}" min="1" max="100" style="width:55px"></td>
       <td>
         <select class="cc-select piece-grain" style="width:100px">
@@ -275,16 +381,31 @@ function renderPiecesDesktop() {
       <td>
         <button class="text-gray-300 hover:text-red-500 text-lg remove-piece" data-idx="${i}">&times;</button>
       </td>
-    </tr>
-  `).join('');
+    </tr>`;
+  }).join('');
 
   tbody.querySelectorAll('tr').forEach(row => {
     const idx = parseInt(row.dataset.idx);
     const p = pieces[idx];
-    row.querySelector('.piece-label').addEventListener('change', e => { p.label = e.target.value; save(); });
-    row.querySelector('.piece-width').addEventListener('change', e => { p.width = parseInt(e.target.value) || 1; save(); });
-    row.querySelector('.piece-height').addEventListener('change', e => { p.height = parseInt(e.target.value) || 1; save(); });
-    row.querySelector('.piece-qty').addEventListener('change', e => { p.quantity = parseInt(e.target.value) || 1; save(); });
+
+    const updateValidation = () => {
+      const v = validatePiece(p, selectedSheet);
+      row.classList.remove('piece-error', 'piece-warning');
+      if (v.hasError) row.classList.add('piece-error');
+      else if (v.hasWarning) row.classList.add('piece-warning');
+
+      row.querySelector('.piece-width').classList.toggle('input-error', v.errors.some(e => e.field === 'width'));
+      row.querySelector('.piece-height').classList.toggle('input-error', v.errors.some(e => e.field === 'height'));
+
+      const title = [...v.errors.map(e => e.msg), ...v.warnings.map(w => w.msg)].join(' | ');
+      row.title = title;
+      renderValidationSummary();
+    };
+
+    row.querySelector('.piece-label').addEventListener('input', e => { p.label = e.target.value; save(); updateValidation(); });
+    row.querySelector('.piece-width').addEventListener('input', e => { p.width = parseInt(e.target.value) || 0; save(); updateValidation(); });
+    row.querySelector('.piece-height').addEventListener('input', e => { p.height = parseInt(e.target.value) || 0; save(); updateValidation(); });
+    row.querySelector('.piece-qty').addEventListener('input', e => { p.quantity = parseInt(e.target.value) || 0; save(); updateValidation(); });
     row.querySelector('.piece-grain').addEventListener('change', e => { p.grainDirection = e.target.value; p.canRotate = e.target.value === 'none'; save(); });
     row.querySelector('.piece-eb-top').addEventListener('change', e => { p.edgeBanding.top = e.target.checked; save(); });
     row.querySelector('.piece-eb-bottom').addEventListener('change', e => { p.edgeBanding.bottom = e.target.checked; save(); });
@@ -334,6 +455,7 @@ function bindEvents() {
         document.getElementById('sheet-kerf').value = sheet.sawKerf;
         document.getElementById('sheet-trim').value = sheet.trimming;
         saveSelectedSheet(selectedSheet);
+        revalidateAll();
       }
     }
   });
@@ -345,6 +467,7 @@ function bindEvents() {
   document.getElementById('sheet-trim').addEventListener('change', e => {
     selectedSheet.trimming = parseInt(e.target.value) || 10;
     saveSelectedSheet(selectedSheet);
+    revalidateAll();
   });
 
   // Presets
@@ -365,9 +488,21 @@ function save() {
   savePieces(pieces);
 }
 
+function revalidateAll() {
+  renderPiecesMobile();
+  renderPiecesDesktop();
+  renderValidationSummary();
+}
+
 function runOptimization() {
   if (pieces.length === 0) {
     showToast('Adicione pelo menos uma peça', 'warning');
+    return;
+  }
+
+  const { errorCount } = getValidationSummary(pieces, selectedSheet);
+  if (errorCount > 0) {
+    showToast(`${errorCount} peça(s) com erro. Corrija antes de otimizar.`, 'warning');
     return;
   }
 

@@ -361,6 +361,57 @@ input[type="checkbox"] {
   background: #eff6ff;
 }
 
+/* ========== Validation states ========== */
+.piece-card.piece-error {
+  border-color: #fca5a5;
+  background: #fef2f2;
+}
+.piece-card.piece-warning {
+  border-color: #fcd34d;
+  background: #fffbeb;
+}
+.cc-table tr.piece-error td {
+  background: #fef2f2;
+}
+.cc-table tr.piece-warning td {
+  background: #fffbeb;
+}
+.piece-error-msg {
+  font-size: 0.6875rem;
+  color: #dc2626;
+  font-weight: 500;
+  margin-top: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.piece-warning-msg {
+  font-size: 0.6875rem;
+  color: #d97706;
+  font-weight: 500;
+  margin-top: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.cc-input.input-error {
+  border-color: #fca5a5;
+  background: #fef2f2;
+}
+.cc-input.input-error:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
+}
+.validation-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
 /* ========== Empty state ========== */
 .empty-state {
   text-align: center;
